@@ -1,0 +1,57 @@
+from typing import Annotated
+from datetime import datetime, timezone
+
+from sqlalchemy import text, Boolean, Integer, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.repository.types import TgID, Str100, Str1024
+from src.repository.database import Base
+
+
+created_at_type = Annotated[
+    datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))
+]
+modified_at_type = Annotated[
+    datetime,
+    mapped_column(
+        server_default=text("TIMEZONE('utc', now())"),
+        onupdate=datetime.now(timezone.utc),
+    ),
+]
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tg_id: Mapped[TgID] = mapped_column(nullable=False)
+    invites: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
+
+    profile: Mapped["Profile"] = relationship(
+        back_populates="profiles",
+    )
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+
+    profile_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"))
+
+    name: Mapped[Str100] = mapped_column(nullable=False)
+    age: Mapped[int] = mapped_column(Integer, nullable=False)
+    uni: Mapped[Str100] = mapped_column(nullable=False)
+    description: Mapped[Str1024] = mapped_column(nullable=False)
+    
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=True, server_default=text("true")
+    )
+
+    s3_path: Mapped[Str1024] = mapped_column(nullable=False, unique=True)
+
+    created_at: Mapped[created_at_type]
+    modified_at: Mapped[modified_at_type]
+
+    user: Mapped["User"] = relationship(
+        back_populates="users",
+    )
