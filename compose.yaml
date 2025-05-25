@@ -1,0 +1,23 @@
+services:
+  bot:
+    build: .
+    env_file: .env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data: 
