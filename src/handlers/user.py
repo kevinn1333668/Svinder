@@ -11,8 +11,21 @@ from src.states import StartStates
 user_router = Router()
 
 
+@user_router.message(StartStates.start)
+async def user_start(message: Message, state: FSMContext):
+    pass
+
+
 @user_router.message(StartStates.get_token)
 async def user_get_token(message: Message, state: FSMContext):
+    if await AsyncORM.get_user_by_telegram_id(message.from_user.id):
+        await state.set_state(StartStates.main_menu)
+    else:
+        await state.set_state(StartStates.get_token)
+
+
+@user_router.message(StartStates.main_menu)
+async def user_main_menu(message: Message, state: FSMContext):
     if await AsyncORM.get_user_by_telegram_id(message.from_user.id):
         await state.set_state(StartStates.main_menu)
     else:
