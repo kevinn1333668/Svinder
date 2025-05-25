@@ -8,6 +8,7 @@ from aiogram.enums import ParseMode
 
 from src.config import settings
 from src.handlers.user import user_router
+from src.handlers.commands import commands_router
 from src.repository.queries import AsyncORM
 
 
@@ -17,7 +18,7 @@ async def main():
     bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
-    dp.include_routers(user_router)
+    dp.include_routers(commands_router, user_router)
     
     await dp.start_polling(bot)
 
