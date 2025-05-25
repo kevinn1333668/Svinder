@@ -8,9 +8,12 @@ from aiogram.enums import ParseMode
 
 from src.config import settings
 from src.routers.user import user_router
+from src.repository.queries import AsyncORM
 
 
 async def main():
+    await AsyncORM.create_tables()
+    
     bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
