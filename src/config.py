@@ -3,12 +3,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     BOT_TOKEN: str
+    LLM_TOKEN: str
 
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
-    DATABASE_URL: str
-
+    DB_USER: str
+    DB_PASS: str
+    DB_NAME: str
+    
     
     model_config = SettingsConfigDict(env_file=".env")
 
