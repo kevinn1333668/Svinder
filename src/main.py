@@ -1,28 +1,21 @@
-import asyncio
 import logging
+import sys
+import asyncio
+
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
-from dotenv import load_dotenv
-import os
 
 from src.config import settings
-from src.handlers import register_handlers
-from src.database import create_pool
 
-
-logging.basicConfig(level=logging.INFO)
 
 async def main():
-    bot = Bot(token=settings.BOT_TOKEN, parse_mode=ParseMode.HTML)
-    storage = MemoryStorage()
-    dp = Dispatcher(storage=storage)
-
-    pool = await create_pool(settings.DATABASE_URL)
-    
-    register_handlers(dp)
+    bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    dp = Dispatcher()
 
     await dp.start_polling(bot)
 
+
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())

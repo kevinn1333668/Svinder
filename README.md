@@ -1,6 +1,6 @@
 # Sustrecha - Telegram Dating Bot
 
-A Telegram bot for dating and networking among students (18-25 years old) with an invite-only system.
+A Telegram bot for networking, communication and dating among students (18-25 years old) with an invite-only system.
 
 ## Features
 
