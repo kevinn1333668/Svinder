@@ -4,11 +4,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     BOT_TOKEN: str
     LLM_TOKEN: str
+    ADMIN_TOKEN: str
 
     DB_USER: str
     DB_PASS: str
     DB_NAME: str
-    
+
+    ADMIN_ID: int
 
     @property
     def database_url(self):
