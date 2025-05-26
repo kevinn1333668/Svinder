@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 
 from src.states import StartStates
-from src.repository.queries import AsyncORM
+from src.service.db_service import AsyncServiceDB
 from src.keyboards.reply import welcome_keyboard, sex_selection_horizontal_keyboard
 
 
@@ -37,4 +37,13 @@ async def command_start(message: Message, state: FSMContext):
         reply_markup=welcome_keyboard(),
         parse_mode="Markdown",
     )
-    await state.set_state(StartStates.start)
+
+    if await AsyncServiceDB.is_user_exist_by_telegram_id(message.from_user.id):
+        await message.answer(
+            "You exist in DB!"
+        )
+    else:
+        await message.answer(
+            "You dont exist in DB!"
+        )
+    # await state.set_state(StartStates.start)

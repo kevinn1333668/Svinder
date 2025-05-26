@@ -4,7 +4,6 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 
 from src.repository.queries import AsyncORM
-from src.schemas import UserSchema
 from src.states import StartStates
 
 

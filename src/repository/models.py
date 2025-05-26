@@ -28,7 +28,7 @@ class User(Base):
     invites: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
 
     profile: Mapped["Profile"] = relationship(
-        back_populates="profiles",
+        back_populates="user",
     )
 
 
@@ -54,5 +54,5 @@ class Profile(Base):
     modified_at: Mapped[modified_at_type]
 
     user: Mapped["User"] = relationship(
-        back_populates="users",
+        back_populates="profile",
     )
