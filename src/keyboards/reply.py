@@ -1,5 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+from src.static.text.texts import text_search_profiles, text_edit_profile, text_show_invite_code, text_go_to_deepseek
 
 def welcome_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
@@ -51,10 +52,10 @@ def sex_selection_horizontal_keyboard() -> ReplyKeyboardMarkup:
 def main_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Смотреть анкеты 🔎")],
-            [KeyboardButton(text="Редактировать свою анкету 🪞")],
-            [KeyboardButton(text="Инвайт-код для друга 💎")],
-            [KeyboardButton(text="Мне никто не пишет. . .")],
+            [KeyboardButton(text=text_search_profiles)],
+            [KeyboardButton(text=text_edit_profile)],
+            [KeyboardButton(text=text_show_invite_code)],
+            [KeyboardButton(text=text_go_to_deepseek)],
         ],
         resize_keyboard=True,
     )
