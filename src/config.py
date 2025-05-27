@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     DB_PASS: str
     DB_NAME: str
 
+    JWT_SECRET: str
+    
     ADMIN_ID: int
 
     @property

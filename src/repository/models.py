@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import text, Boolean, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.repository.types import TgID, Str100, Str1024, SexEnum
+from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum
 from src.repository.database import Base
 
 
@@ -26,6 +26,7 @@ class User(Base):
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tg_id: Mapped[TgID] = mapped_column(nullable=False)
     invites: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
+    invite_code: Mapped[Str256] = mapped_column(nullable=True)
 
     profile: Mapped["Profile"] = relationship(
         back_populates="user",

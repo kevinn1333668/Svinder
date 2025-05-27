@@ -11,6 +11,7 @@ class UserSchema(BaseModel):
     tg_id: Annotated[int, Field()]
 
     invites: Annotated[int, Field()]
+    invite_code: Annotated[str, Field()]
 
     model_config = ConfigDict(from_attributes=True)
 

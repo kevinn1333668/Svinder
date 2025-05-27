@@ -9,7 +9,7 @@ from src.repository.types import TgID, Str32, Str64, Str100, Str128, Str256, Str
 
 engine = create_async_engine(
     settings.database_url,
-    echo=True,
+    echo=False,
 )
 
 

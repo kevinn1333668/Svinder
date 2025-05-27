@@ -4,7 +4,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 
 from src.config import settings
-from src.repository.queries import AsyncORM
+from src.service.db_service import ServiceDB
 from src.states import UserRoadmap
 from src.keyboards.reply import go_to_main_menu
 
@@ -29,12 +29,17 @@ async def user_get_token(message: Message, state: FSMContext):
 @user_router.message(UserRoadmap.check_token)
 async def user_check_token(message: Message, state: FSMContext):
     if message.text:
-        if message.text == settings.ADMIN_TOKEN:
-            await state.set_state(UserRoadmap.main_menu)
-            await message.answer(
-                "Welcome to the club, buddy!",
-                reply_markup=go_to_main_menu(),
-            )
+        if message.text == settings.ADMIN_TOKEN or await ServiceDB.is_valid_code(message.text):
+            try:
+                await ServiceDB.add_user(message.from_user.id)
+                await state.set_state(UserRoadmap.main_menu)
+                await message.answer(
+                    "Welcome to the club, buddy!",
+                    reply_markup=go_to_main_menu(),
+                )
+            except Exception:
+                await state.clear()
+                await message.answer("Smth is wrong")
         else:
             await message.answer("Такого инвайта не существует!")
     else:

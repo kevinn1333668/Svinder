@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 
 from src.states import UserRoadmap
-from src.service.db_service import AsyncServiceDB
+from src.service.db_service import ServiceDB
 from src.keyboards.reply import welcome_keyboard, sex_selection_horizontal_keyboard
 
 
@@ -38,7 +38,7 @@ async def command_start(message: Message, state: FSMContext):
         parse_mode="Markdown",
     )
 
-    if await AsyncServiceDB.is_user_exist_by_telegram_id(message.from_user.id):
+    if await ServiceDB.is_user_exist_by_telegram_id(message.from_user.id):
         await state.set_state(UserRoadmap.main_menu)
     else:
         await state.set_state(UserRoadmap.get_token)
