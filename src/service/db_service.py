@@ -27,7 +27,7 @@ class ServiceDB:
         if inviter_tgid is None:
             return False
         
-        user_data = await AsyncORM.get_user_by_telegram_id(inviter_tgid)
+        user_data = await AsyncORM.get_user_by_tgid(inviter_tgid)
         user = UserSchema.model_validate(user_data)
         
         if user.invite_code == code and user.invites > 0:
@@ -39,7 +39,7 @@ class ServiceDB:
     
     @staticmethod
     async def is_user_exist_by_tgid(tg_id: int) -> bool:
-        user = await AsyncORM.get_user_by_telegram_id(tg_id)
+        user = await AsyncORM.get_user_by_tgid(tg_id)
 
         if user is None:
             return False
@@ -54,8 +54,21 @@ class ServiceDB:
         return True
 
     @staticmethod
-    async def get_user_by_telegram_id(tg_id: int):
-        pass
+    async def get_user_by_tgid(tg_id: int) -> UserSchema | None:
+        user_data = await AsyncORM.get_user_by_tgid(tg_id)
+        user = UserSchema.model_validate(user_data)
+        if user is None:
+            return None
+        return user
+    
+
+    @staticmethod
+    async def get_invite_info_by_tgid(tg_id: int) -> UserSchema | None:
+        user_data = await AsyncORM.get_user_by_tgid(tg_id)
+        user = UserSchema.model_validate(user_data)
+        if user is None:
+            return None
+        return (user.invites, user.invite_code)
 
 
     @staticmethod

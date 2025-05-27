@@ -43,7 +43,7 @@ class AsyncORM:
             return result.scalar_one_or_none()
     
     @staticmethod
-    async def get_user_by_telegram_id(tg_id: int):
+    async def get_user_by_tgid(tg_id: int):
         async with session_maker() as session:
             result = await session.execute(select(User).filter(User.tg_id == tg_id))
             return result.scalar_one_or_none()

@@ -1,5 +1,6 @@
 import random
 
+from aiogram import F
 from aiogram import Router
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, Command
@@ -8,7 +9,13 @@ from src.config import settings
 from src.service.db_service import ServiceDB
 from src.states import UserRoadmap
 from src.keyboards.reply import go_to_main_menu, go_to_check_token, main_menu_keyboard
-from src.static.text.texts import text_main_menu, text_main_menu_get_back
+from src.static.text.texts import (
+    text_main_menu, text_main_menu_get_back,
+    text_search_profiles, text_edit_profile,
+    text_show_invite_code, text_go_to_deepseek,
+    get_invite_message
+)
+
 
 user_router = Router()
 
@@ -45,6 +52,20 @@ async def user_check_token(message: Message, state: FSMContext):
             await message.answer("Такого инвайта не существует!")
     else:
         await message.answer("Инвайт-код должен быть текстом!")
+
+
+@user_router.message(UserRoadmap.main_menu, F.text == text_show_invite_code)
+async def user_show_invite_code(message: Message, state: FSMContext):
+    invite_data = await ServiceDB.get_invite_info_by_tgid(message.from_user.id)
+    if len(invite_data) == 2:
+        await message.answer(
+            get_invite_message(invite_data[0], invite_data[1]),
+            reply_markup=go_to_main_menu(),
+            parse_mode="Markdown",
+        )
+    else:
+        await message.answer("Произошло что-то странное... Щелк* Ты ничего не видел.")
+
 
 
 @user_router.message(UserRoadmap.main_menu)
