@@ -19,6 +19,15 @@ def go_to_main_menu() -> ReplyKeyboardMarkup:
     )
 
 
+def go_to_check_token() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Сейчас будут документы")]
+        ],
+        resize_keyboard=True,
+    )
+
+
 def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[

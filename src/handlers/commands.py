@@ -38,7 +38,7 @@ async def command_start(message: Message, state: FSMContext):
         parse_mode="Markdown",
     )
 
-    if await ServiceDB.is_user_exist_by_telegram_id(message.from_user.id):
+    if await ServiceDB.is_user_exist_by_tgid(message.from_user.id):
         await state.set_state(UserRoadmap.main_menu)
     else:
         await state.set_state(UserRoadmap.get_token)

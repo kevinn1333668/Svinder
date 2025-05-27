@@ -38,7 +38,7 @@ class ServiceDB:
 
     
     @staticmethod
-    async def is_user_exist_by_telegram_id(tg_id: int) -> bool:
+    async def is_user_exist_by_tgid(tg_id: int) -> bool:
         user = await AsyncORM.get_user_by_telegram_id(tg_id)
 
         if user is None:
