@@ -8,7 +8,7 @@ from src.config import settings
 from src.service.db_service import ServiceDB
 from src.states import UserRoadmap
 from src.keyboards.reply import go_to_main_menu, go_to_check_token, main_menu_keyboard
-
+from src.static.text.texts import text_main_menu, text_main_menu_get_back
 
 user_router = Router()
 
@@ -47,19 +47,6 @@ async def user_check_token(message: Message, state: FSMContext):
         await message.answer("Инвайт-код должен быть текстом!")
 
 
-
-text_main_menu = """
-┏━━━━━━━━━━━ *Сустрэча* ━━━━━━━━━━━┓
-
-    ━━ Знакомься 👱🏿‍♂️
-
-    ━━ Приглашай друзей 💎
-
-    ━━ Оформи анкету 🎨
-
-┗━━━━━━ *Выбирай кнопку ниже* ━━━━━━┛
-"""
-
 @user_router.message(UserRoadmap.main_menu)
 async def user_main_menu(message: Message, state: FSMContext):
     await message.answer(
@@ -69,19 +56,11 @@ async def user_main_menu(message: Message, state: FSMContext):
     )
 
 
-user_messages_mm = [
-    "Рад снова тебя видеть! 😈",
-    "Зачем ты удалил наш чат!? Ну ладно, заходи, я соскучился 🥹",
-    "Какие люди в Голливуде! Проходи!",
-    "Залетай ✈️",
-]
-
-
 @user_router.message()
 async def user_message(message: Message, state: FSMContext):
     if await ServiceDB.is_user_exist_by_tgid(message.from_user.id):
         await message.answer(
-            random.choice(user_messages_mm),
+            random.choice(text_main_menu_get_back),
             reply_markup=go_to_main_menu(),
         )
         await state.set_state(UserRoadmap.main_menu)
