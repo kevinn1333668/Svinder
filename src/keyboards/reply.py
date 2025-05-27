@@ -4,7 +4,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 def welcome_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Начать", callback_data="start_quest")]
+            [KeyboardButton(text="Начать")]
         ],
         resize_keyboard=True,
     )
@@ -13,7 +13,7 @@ def welcome_keyboard() -> ReplyKeyboardMarkup:
 def go_to_main_menu() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Перейти в главное меню", callback_data="start_quest")]
+            [KeyboardButton(text="Перейти в главное меню")]
         ],
         resize_keyboard=True,
     )
@@ -31,8 +31,8 @@ def go_to_check_token() -> ReplyKeyboardMarkup:
 def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Парень", callback_data="gender_male")],
-            [KeyboardButton(text="Девушка", callback_data="gender_female")],
+            [KeyboardButton(text="Парень")],
+            [KeyboardButton(text="Девушка")],
         ],
         resize_keyboard=True,
     )
@@ -41,8 +41,20 @@ def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
 def sex_selection_horizontal_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[
-                KeyboardButton(text="Парень", callback_data="gender_male"),
-                KeyboardButton(text="Девушка", callback_data="gender_female")
+                KeyboardButton(text="Парень"),
+                KeyboardButton(text="Девушка")
         ]],
+        resize_keyboard=True,
+    )
+
+
+def main_menu_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Смотреть анкеты 🔎")],
+            [KeyboardButton(text="Редактировать свою анкету 🪞")],
+            [KeyboardButton(text="Инвайт-код для друга 💎")],
+            [KeyboardButton(text="Мне никто не пишет. . .")],
+        ],
         resize_keyboard=True,
     )

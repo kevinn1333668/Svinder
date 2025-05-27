@@ -47,7 +47,7 @@ class AsyncORM:
         async with session_maker() as session:
             result = await session.execute(select(User).filter(User.tg_id == tg_id))
             return result.scalar_one_or_none()
-        
+    
     @staticmethod
     async def update_invites_and_code_by_tgid(tg_id: int, new_invites_count: int, new_invite_code: str):
         async with session_maker() as session:

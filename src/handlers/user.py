@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from src.config import settings
 from src.service.db_service import ServiceDB
 from src.states import UserRoadmap
-from src.keyboards.reply import go_to_main_menu, go_to_check_token
+from src.keyboards.reply import go_to_main_menu, go_to_check_token, main_menu_keyboard
 
 
 user_router = Router()
@@ -47,13 +47,26 @@ async def user_check_token(message: Message, state: FSMContext):
         await message.answer("Инвайт-код должен быть текстом!")
 
 
+
+text_main_menu = """
+┏━━━━━━━━━━━ *Сустрэча* ━━━━━━━━━━━┓
+
+    ━━ Знакомься 👱🏿‍♂️
+
+    ━━ Приглашай друзей 💎
+
+    ━━ Оформи анкету 🎨
+
+┗━━━━━━ *Выбирай кнопку ниже* ━━━━━━┛
+"""
+
 @user_router.message(UserRoadmap.main_menu)
 async def user_main_menu(message: Message, state: FSMContext):
     await message.answer(
-        "ГЛАВНОЕ МЕНЮ",
-        reply_markup=ReplyKeyboardRemove(),
+        text_main_menu,
+        reply_markup=main_menu_keyboard(),
+        parse_mode="Markdown",
     )
-
 
 
 user_messages_mm = [
