@@ -3,17 +3,25 @@ import random
 from aiogram import F
 from aiogram import Router
 from aiogram.types import Message, ReplyKeyboardRemove
-from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
+
 from src.config import settings
 from src.service.db_service import ServiceDB
-from src.states import UserRoadmap
-from src.keyboards.reply import go_to_main_menu, go_to_check_token, main_menu_keyboard
+from src.states import UserRoadmap, CreateProfileStates
+
+from src.keyboards.reply import (
+    go_to_main_menu, go_to_check_token, 
+    main_menu_keyboard, yes_or_no_keyboard,
+    understand_keyboard
+) 
+
 from src.static.text.texts import (
     text_main_menu, text_main_menu_get_back,
     text_search_profiles, text_edit_profile,
-    text_show_invite_code, text_go_to_deepseek,
-    get_invite_message
+    text_show_invite_code, text_go_to_deepseek, 
+    text_no, text_yes,
+    text_profile_create_begin,
+    get_invite_message,
 )
 
 
@@ -66,6 +74,25 @@ async def user_show_invite_code(message: Message, state: FSMContext):
     else:
         await message.answer("Произошло что-то странное... Щелк* Ты ничего не видел.")
 
+
+@user_router.message(UserRoadmap.main_menu, F.text == text_search_profiles)
+async def user_search_profiles(message: Message, state: FSMContext):
+    if await ServiceDB.is_profile_exist_by_tgid(message.from_user.id):
+        pass
+    else:
+        await message.answer(
+            "Ты еще не создал свою анкету, создать?",
+            reply_markup=yes_or_no_keyboard()
+        )
+
+
+@user_router.message(UserRoadmap.main_menu, F.text == text_yes)
+async def user_create_profile(message: Message, state: FSMContext):
+    await message.answer(
+        text_profile_create_begin,
+        reply_markup=understand_keyboard(),
+    )
+    await state.set_state(CreateProfileStates.start)
 
 
 @user_router.message(UserRoadmap.main_menu)

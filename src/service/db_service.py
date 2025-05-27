@@ -70,8 +70,14 @@ class ServiceDB:
             return None
         return (user.invites, user.invite_code)
 
-
     @staticmethod
     async def add_user(tg_id: int):
         invite_token = ServiceDB.generate_invite_code(tg_id)
         await AsyncORM.create_user(tg_id, 3, invite_token)
+
+    @staticmethod
+    async def is_profile_exist_by_tgid(tg_id: int) -> bool:
+        profile = await AsyncORM.get_profile_by_tgid(tg_id)
+        if profile is None:
+            return False
+        return True

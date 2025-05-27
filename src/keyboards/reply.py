@@ -1,11 +1,25 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-from src.static.text.texts import text_search_profiles, text_edit_profile, text_show_invite_code, text_go_to_deepseek
+from src.static.text.texts import (
+    text_search_profiles, text_edit_profile,
+    text_show_invite_code, text_go_to_deepseek,
+    text_yes, text_no, text_male, text_female
+)
+
 
 def welcome_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Начать")]
+        ],
+        resize_keyboard=True,
+    )
+
+
+def understand_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Понял!")]
         ],
         resize_keyboard=True,
     )
@@ -32,8 +46,8 @@ def go_to_check_token() -> ReplyKeyboardMarkup:
 def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Парень")],
-            [KeyboardButton(text="Девушка")],
+            [KeyboardButton(text=text_male)],
+            [KeyboardButton(text=text_female)],
         ],
         resize_keyboard=True,
     )
@@ -42,8 +56,18 @@ def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
 def sex_selection_horizontal_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[
-                KeyboardButton(text="Парень"),
-                KeyboardButton(text="Девушка")
+                KeyboardButton(text=text_male),
+                KeyboardButton(text=text_female)
+        ]],
+        resize_keyboard=True,
+    )
+
+
+def yes_or_no_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[[
+                KeyboardButton(text=text_yes),
+                KeyboardButton(text=text_no)
         ]],
         resize_keyboard=True,
     )

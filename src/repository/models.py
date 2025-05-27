@@ -24,7 +24,7 @@ class User(Base):
     __tablename__ = "users"
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    tg_id: Mapped[TgID] = mapped_column(nullable=False)
+    tg_id: Mapped[TgID] = mapped_column(nullable=False, unique=True)
     invites: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
     invite_code: Mapped[Str256] = mapped_column(nullable=True)
 
@@ -37,7 +37,7 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     profile_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"))
+    tg_id: Mapped[int] = mapped_column(ForeignKey("users.tg_id"))
 
     name: Mapped[Str100] = mapped_column(nullable=False)
     age: Mapped[int] = mapped_column(Integer, nullable=False)
