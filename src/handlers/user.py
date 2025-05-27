@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 
@@ -17,18 +17,18 @@ async def user_start(message: Message, state: FSMContext):
 
 @user_router.message(StartStates.get_token)
 async def user_get_token(message: Message, state: FSMContext):
-    if await AsyncORM.get_user_by_telegram_id(message.from_user.id):
-        await state.set_state(StartStates.main_menu)
-    else:
-        await state.set_state(StartStates.get_token)
+    await message.answer(
+        "Ты еще не зарегестрирован! Введи инвайт-код и присоединяйся!",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @user_router.message(StartStates.main_menu)
 async def user_main_menu(message: Message, state: FSMContext):
-    if await AsyncORM.get_user_by_telegram_id(message.from_user.id):
-        await state.set_state(StartStates.main_menu)
-    else:
-        await state.set_state(StartStates.get_token)
+    await message.answer(
+        "ГЛАВНОЕ МЕНЮ",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @user_router.message()

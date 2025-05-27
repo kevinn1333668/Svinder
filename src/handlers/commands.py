@@ -39,11 +39,7 @@ async def command_start(message: Message, state: FSMContext):
     )
 
     if await AsyncServiceDB.is_user_exist_by_telegram_id(message.from_user.id):
-        await message.answer(
-            "You exist in DB!"
-        )
+        await state.set_state(StartStates.main_menu)
     else:
-        await message.answer(
-            "You dont exist in DB!"
-        )
+        await state.set_state(StartStates.get_token)
     # await state.set_state(StartStates.start)
