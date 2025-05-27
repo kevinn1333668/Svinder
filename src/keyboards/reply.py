@@ -10,6 +10,15 @@ def welcome_keyboard() -> ReplyKeyboardMarkup:
     )
 
 
+def go_to_main_menu() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Перейти в главное меню", callback_data="start_quest")]
+        ],
+        resize_keyboard=True,
+    )
+
+
 def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
