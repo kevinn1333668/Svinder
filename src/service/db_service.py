@@ -28,15 +28,12 @@ class ServiceDB:
             return False
         
         user_data = await AsyncORM.get_user_by_telegram_id(inviter_tgid)
-        user = UserSchema.from_orm(user_data)
-
-        print(code)
-        print(user)
+        user = UserSchema.model_validate(user_data)
         
-        if user.invite_code == code:
-            new_code = ServiceDB.generate_invite_code(inviter_tgid)
-            return True
-        
+        if user.invite_code == code and user.invites > 0:
+                new_code = ServiceDB.generate_invite_code(inviter_tgid)
+                await AsyncORM.update_invites_and_code_by_tgid(inviter_tgid, user.invites-1, new_code)
+                return True
         return False
 
     

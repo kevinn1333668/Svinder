@@ -1,4 +1,4 @@
-from sqlalchemy import text, select
+from sqlalchemy import text, select, update
 
 from src.repository.database import engine, Base, session_maker
 from src.repository.models import User, Profile  # noqa: F401
@@ -15,7 +15,7 @@ class AsyncORM:
     @staticmethod
     async def create_tables():
         async with engine.begin() as conn:
-            # await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
     @staticmethod
@@ -47,3 +47,23 @@ class AsyncORM:
         async with session_maker() as session:
             result = await session.execute(select(User).filter(User.tg_id == tg_id))
             return result.scalar_one_or_none()
+        
+    @staticmethod
+    async def update_invites_and_code_by_tgid(tg_id: int, new_invites_count: int, new_invite_code: str):
+        async with session_maker() as session:
+            result = await session.execute(
+                update(User)
+                .where(User.tg_id == tg_id)
+                .values(
+                    invites=new_invites_count,
+                    invite_code=new_invite_code,
+                )
+                .returning(User)
+            )
+            updated_user = result.scalar_one_or_none()
+            
+            if updated_user is None:
+                return False
+                
+            await session.commit()
+            return True
