@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile
 from aiogram.fsm.context import FSMContext
 
 from src.service.db_service import ServiceDB
@@ -15,9 +15,12 @@ search_router = Router()
 async def profile_start(message: Message, state: FSMContext):
     profile = await ServiceDB.search_profile(message.from_user.id)
 
+    profile_image = FSInputFile(str(profile.s3_path))
+
     if profile:
-        await message.answer(
-            f"{profile.name}, {profile.age} лет, {profile.uni}\n{profile.description}",
+        await message.answer_photo(
+            photo=profile_image,
+            caption=f"{profile.name}, {profile.age} лет, {profile.uni}\n{profile.description}",
             reply_markup=profile_action_keyboard()
         )
         await state.set_state(SearchProfileStates.get_profile)
