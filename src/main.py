@@ -14,6 +14,7 @@ from src.config import settings
 from src.handlers.user import user_router
 from src.handlers.commands import commands_router
 from src.handlers.profile import profile_router
+from src.handlers.search_profile import search_router
 from src.repository.queries import AsyncORM
 
 
@@ -23,14 +24,11 @@ async def main():
     bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
-    dp.include_routers(commands_router, profile_router, user_router)
+    dp.include_routers(commands_router, profile_router, search_router, user_router)
     
     await dp.start_polling(bot)
 
 
-
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    asyncio.run(main())
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())

@@ -1,4 +1,4 @@
-from sqlalchemy import text, select, update
+from sqlalchemy import func, text, select, update
 
 from src.repository.database import engine, Base, session_maker
 from src.repository.models import User, Profile  # noqa: F401
@@ -95,3 +95,18 @@ class ProfileORM:
             session.add(new_profile)
             
             await session.commit()
+    
+    @staticmethod
+    async def get_random_profile_except_tgid(curr_user_tgid: int) -> Profile | None:
+        async with session_maker() as session:
+            stmt = select(Profile).where(
+                Profile.tg_id != curr_user_tgid
+            ).order_by(
+                func.random()
+            ).limit(1)
+
+            result = await session.execute(stmt)
+
+            random_profile = result.scalar_one_or_none()
+
+            return random_profile

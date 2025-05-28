@@ -17,3 +17,9 @@ class CreateProfileStates(StatesGroup):
     description = State()
     photo = State()
 
+
+class SearchProfileStates(StatesGroup):
+    get_profile = State()
+    like = State()
+    dislike = State()
+

@@ -18,7 +18,7 @@ class UserSchema(BaseModel):
 
 class ProfileSchema(BaseModel):
     profile_id: Annotated[int, Field()]
-    user_id: Annotated[int, Field()]
+    tg_id: Annotated[int, Field()]
 
     name: Annotated[str, Field(min_length=1, max_length=100)]
     age: Annotated[int, Field(ge=16, le=80)]

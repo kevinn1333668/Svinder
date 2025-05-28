@@ -7,12 +7,12 @@ from aiogram.fsm.context import FSMContext
 
 from src.config import settings
 from src.service.db_service import ServiceDB
-from src.states import UserRoadmap, CreateProfileStates
+from src.states import SearchProfileStates, UserRoadmap, CreateProfileStates
 
 from src.keyboards.reply import (
     go_to_main_menu, go_to_check_token, 
     main_menu_keyboard, yes_or_no_keyboard,
-    understand_keyboard
+    understand_keyboard, welcome_keyboard
 ) 
 
 from src.static.text.texts import (
@@ -22,6 +22,7 @@ from src.static.text.texts import (
     text_no, text_yes,
     text_profile_create_begin,
     get_invite_message,
+    text_search_profiles_start,
 )
 
 
@@ -78,7 +79,11 @@ async def user_show_invite_code(message: Message, state: FSMContext):
 @user_router.message(UserRoadmap.main_menu, F.text == text_search_profiles)
 async def user_search_profiles(message: Message, state: FSMContext):
     if await ServiceDB.is_profile_exist_by_tgid(message.from_user.id):
-        pass
+        await message.answer(
+            text_search_profiles_start,
+            reply_markup=welcome_keyboard(),
+        )
+        await state.set_state(SearchProfileStates.get_profile)
     else:
         await message.answer(
             "Ты еще не создал свою анкету, создать?",

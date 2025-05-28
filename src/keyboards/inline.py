@@ -1,13 +1,14 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-# def welcome_keyboard() -> InlineKeyboardMarkup:
-#     return InlineKeyboardMarkup(
-#         inline_keyboard=[
-#             [InlineKeyboardButton(text="Начать", callback_data="start_quest")]
-#         ]
-#     )
-
+def profile_action_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[
+                InlineKeyboardButton(text="♥️", callback_data="like"),
+                InlineKeyboardButton(text="👎", callback_data="next"),
+                InlineKeyboardButton(text="💤", callback_data="main_menu")
+        ]]
+    )
 
 # def sex_selection_vertical_keyboard() -> InlineKeyboardMarkup:
 #     return InlineKeyboardMarkup(
@@ -15,13 +16,4 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 #             [InlineKeyboardButton(text="Парень", callback_data="gender_male")],
 #             [InlineKeyboardButton(text="Девушка", callback_data="gender_female")],
 #         ]
-#     )
-
-
-# def sex_selection_horizontal_keyboard() -> InlineKeyboardMarkup:
-#     return InlineKeyboardMarkup(
-#         inline_keyboard=[[
-#                 InlineKeyboardButton(text="Парень", callback_data="gender_male"),
-#                 InlineKeyboardButton(text="Девушка", callback_data="gender_female")
-#         ]]
 #     )
