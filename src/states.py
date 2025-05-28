@@ -6,6 +6,7 @@ class UserRoadmap(StatesGroup):
     get_token = State()
     check_token = State()
     main_menu = State()
+    llm_chat = State()
 
 
 class CreateProfileStates(StatesGroup):

@@ -9,6 +9,8 @@ from src.config import settings
 from src.service.db_service import ServiceDB
 from src.states import SearchProfileStates, UserRoadmap, CreateProfileStates
 
+from src.service.llm import llm_generate, llm_init_agent, llm_generate_simple
+
 from src.keyboards.reply import (
     go_to_main_menu, go_to_check_token, 
     main_menu_keyboard, yes_or_no_keyboard,
@@ -98,6 +100,38 @@ async def user_create_profile(message: Message, state: FSMContext):
         reply_markup=understand_keyboard(),
     )
     await state.set_state(CreateProfileStates.start)
+
+
+@user_router.message(UserRoadmap.main_menu, F.text == text_go_to_deepseek)
+async def user_start_chat_with_ai(message: Message, state: FSMContext):
+    llm_message = await llm_init_agent()
+    await message.answer(
+        llm_message,
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    await state.set_state(UserRoadmap.llm_chat)
+
+
+@user_router.message(UserRoadmap.llm_chat)
+async def user_chat_with_ai(message: Message, state: FSMContext):
+    if message.text:
+        if message.text == '/cancel':
+            await state.set_state(UserRoadmap.main_menu)
+            await message.answer(
+                "Уходишь? Ну ладно, приходи еще! 👋",
+                reply_markup=main_menu_keyboard(),
+            )
+            return
+        llm_message = await llm_generate_simple(message.text)
+        await message.answer(
+            llm_message,
+            reply_markup=ReplyKeyboardRemove(),
+        )
+    else:
+        await message.answer(
+            "Бот, Пожалуйста, введи текст для общения с ботом.",
+            reply_markup=ReplyKeyboardRemove(),
+        )
 
 
 @user_router.message(UserRoadmap.main_menu)
