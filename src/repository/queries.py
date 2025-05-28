@@ -19,6 +19,7 @@ class AsyncORM:
             # await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 
+class UserORM:
     @staticmethod
     async def create_user(tg_id: int, invites: int, invite_code: str | None):
         async with session_maker() as session:
@@ -41,12 +42,6 @@ class AsyncORM:
     async def get_profile_by_id(profile_id: int):
         async with session_maker() as session:
             result = await session.execute(select(Profile).filter(Profile.profile_id == profile_id))
-            return result.scalar_one_or_none()
-        
-    @staticmethod
-    async def get_profile_by_tgid(tg_id: int):
-        async with session_maker() as session:
-            result = await session.execute(select(Profile).filter(Profile.tg_id == tg_id))
             return result.scalar_one_or_none()
     
     @staticmethod
@@ -74,6 +69,14 @@ class AsyncORM:
                 
             await session.commit()
             return True
+        
+    
+class ProfileORM:
+    @staticmethod
+    async def get_profile_by_tgid(tg_id: int):
+        async with session_maker() as session:
+            result = await session.execute(select(Profile).filter(Profile.tg_id == tg_id))
+            return result.scalar_one_or_none()
         
     @staticmethod
     async def create_profile(profile_data: ProfileCreateInternalSchema):

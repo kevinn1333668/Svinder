@@ -151,7 +151,7 @@ async def profile_photo(message: Message, state: FSMContext, bot: Bot):
 
         await message.answer_photo(
             photo=profile_image,
-            caption="Анкета сделана",
+            caption=f"Анкета создана.\n{profile.name}, {profile.age} лет, {profile.uni}\n{profile.description}",
             reply_markup=main_menu_keyboard(),
             parse_mode="Markdown",
         )

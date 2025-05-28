@@ -2,7 +2,7 @@ import jwt
 from random import randint 
 
 from src.config import settings
-from src.repository.queries import AsyncORM
+from src.repository.queries import AsyncORM, UserORM, ProfileORM
 from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema
 
 
@@ -27,19 +27,19 @@ class ServiceDB:
         if inviter_tgid is None:
             return False
         
-        user_data = await AsyncORM.get_user_by_tgid(inviter_tgid)
+        user_data = await UserORM.get_user_by_tgid(inviter_tgid)
         user = UserSchema.model_validate(user_data)
         
         if user.invite_code == code and user.invites > 0:
                 new_code = ServiceDB.generate_invite_code(inviter_tgid)
-                await AsyncORM.update_invites_and_code_by_tgid(inviter_tgid, user.invites-1, new_code)
+                await UserORM.update_invites_and_code_by_tgid(inviter_tgid, user.invites-1, new_code)
                 return True
         return False
 
     
     @staticmethod
     async def is_user_exist_by_tgid(tg_id: int) -> bool:
-        user = await AsyncORM.get_user_by_tgid(tg_id)
+        user = await UserORM.get_user_by_tgid(tg_id)
 
         if user is None:
             return False
@@ -47,7 +47,7 @@ class ServiceDB:
 
     @staticmethod
     async def is_user_exist_by_id(user_id: int) -> bool:
-        user = await AsyncORM.get_user_by_id(user_id)
+        user = await UserORM.get_user_by_id(user_id)
 
         if user is None:
             return False
@@ -55,7 +55,7 @@ class ServiceDB:
 
     @staticmethod
     async def get_user_by_tgid(tg_id: int) -> UserSchema | None:
-        user_data = await AsyncORM.get_user_by_tgid(tg_id)
+        user_data = await UserORM.get_user_by_tgid(tg_id)
         user = UserSchema.model_validate(user_data)
         if user is None:
             return None
@@ -64,7 +64,7 @@ class ServiceDB:
 
     @staticmethod
     async def get_invite_info_by_tgid(tg_id: int) -> UserSchema | None:
-        user_data = await AsyncORM.get_user_by_tgid(tg_id)
+        user_data = await UserORM.get_user_by_tgid(tg_id)
         user = UserSchema.model_validate(user_data)
         if user is None:
             return None
@@ -73,16 +73,16 @@ class ServiceDB:
     @staticmethod
     async def add_user(tg_id: int):
         invite_token = ServiceDB.generate_invite_code(tg_id)
-        await AsyncORM.create_user(tg_id, 3, invite_token)
+        await UserORM.create_user(tg_id, 3, invite_token)
 
     @staticmethod
     async def is_profile_exist_by_tgid(tg_id: int) -> bool:
-        profile = await AsyncORM.get_profile_by_tgid(tg_id)
+        profile = await ProfileORM.get_profile_by_tgid(tg_id)
         if profile is None:
             return False
         return True
     
     @staticmethod
     async def add_profile(profile_to_add: ProfileCreateInternalSchema):
-        await AsyncORM.create_profile(profile_to_add)
+        await ProfileORM.create_profile(profile_to_add)
     
