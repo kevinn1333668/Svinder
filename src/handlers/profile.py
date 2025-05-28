@@ -1,15 +1,21 @@
-from aiogram import F
+from pathlib import Path
+
+from aiogram import F, Bot
 from aiogram import Router
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile
 from aiogram.fsm.context import FSMContext
 
 from src.states import UserRoadmap, CreateProfileStates
 from src.keyboards.reply import sex_selection_horizontal_keyboard, main_menu_keyboard
-
+from src.service.db_service import ServiceDB
+from src.service.schemas import ProfileCreateInternalSchema
 from src.static.text.texts import text_male, text_female
 
 
 profile_router = Router()
+
+UPLOAD_DIR = Path('/app/src/static/users')
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @profile_router.message(CreateProfileStates.start)
@@ -114,11 +120,40 @@ async def profile_description(message: Message, state: FSMContext):
 
 
 @profile_router.message(CreateProfileStates.photo)
-async def profile_photo(message: Message, state: FSMContext):
+async def profile_photo(message: Message, state: FSMContext, bot: Bot):
     if not message.photo:
         await message.answer(
             f"Вряд ли это фотка! Попробуй еще раз",
             reply_markup=ReplyKeyboardRemove(),
         )
     else:
+        photo_size = message.photo[-1]
+        dest_path = UPLOAD_DIR / (str(message.from_user.id) + ".jpg")
+        
+        await bot.download(
+            photo_size,
+            destination=dest_path
+        )
+        data = await state.get_data()
+        profile = ProfileCreateInternalSchema(
+            tg_id=message.from_user.id,
+            name=data["name"],
+            age=data["age"],
+            sex=data["sex"],
+            uni=data["uni"],
+            description=data["description"],
+            s3_path=str(dest_path),
+        )
+
+        await ServiceDB.add_profile(profile)
+
+        profile_image = FSInputFile(str(dest_path))
+
+        await message.answer_photo(
+            photo=profile_image,
+            caption="Анкета сделана",
+            reply_markup=main_menu_keyboard(),
+            parse_mode="Markdown",
+        )
+
         await state.set_state(UserRoadmap.main_menu)

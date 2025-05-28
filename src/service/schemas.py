@@ -24,7 +24,7 @@ class ProfileSchema(BaseModel):
     age: Annotated[int, Field(ge=16, le=80)]
     sex: Annotated[SexEnum, Field()]
     uni: Annotated[str, Field(min_length=2, max_length=100)]
-    description: Annotated[str, Field(min_length=10, max_length=1024)]
+    description: Annotated[str, Field(max_length=1024)]
 
     is_active: Annotated[bool, Field(default=True)]
     s3_path: Annotated[str | None, Field()]
@@ -33,4 +33,16 @@ class ProfileSchema(BaseModel):
     modified_at: Annotated[datetime, Field()]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProfileCreateInternalSchema(BaseModel):
+    tg_id: int
+
+    name: Annotated[str, Field(min_length=1, max_length=100)]
+    age: Annotated[int, Field(ge=16, le=80)]
+    sex: Annotated[SexEnum, Field()]
+    uni: Annotated[str, Field(min_length=2, max_length=100)]
+    description: Annotated[str, Field(max_length=1024)]
+
+    s3_path: Annotated[str | None, Field()]
 

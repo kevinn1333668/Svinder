@@ -3,7 +3,7 @@ from random import randint
 
 from src.config import settings
 from src.repository.queries import AsyncORM
-from src.service.schemas import UserSchema, ProfileSchema
+from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema
 
 
 class ServiceDB:
@@ -81,3 +81,8 @@ class ServiceDB:
         if profile is None:
             return False
         return True
+    
+    @staticmethod
+    async def add_profile(profile_to_add: ProfileCreateInternalSchema):
+        await AsyncORM.create_profile(profile_to_add)
+    

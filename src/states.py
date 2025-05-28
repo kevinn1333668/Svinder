@@ -16,5 +16,4 @@ class CreateProfileStates(StatesGroup):
     university = State()
     description = State()
     photo = State()
-    final = State()
 

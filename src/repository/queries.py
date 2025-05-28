@@ -2,6 +2,7 @@ from sqlalchemy import text, select, update
 
 from src.repository.database import engine, Base, session_maker
 from src.repository.models import User, Profile  # noqa: F401
+from src.service.schemas import ProfileCreateInternalSchema
 
 
 class AsyncORM:
@@ -73,3 +74,21 @@ class AsyncORM:
                 
             await session.commit()
             return True
+        
+    @staticmethod
+    async def create_profile(profile_data: ProfileCreateInternalSchema):
+        async with session_maker() as session:
+            
+            new_profile = Profile(
+                tg_id=profile_data.tg_id,
+                name=profile_data.name,
+                age=profile_data.age,
+                sex=profile_data.sex,
+                uni=profile_data.uni,
+                description=profile_data.description,
+                s3_path=profile_data.s3_path
+            )
+
+            session.add(new_profile)
+            
+            await session.commit()
