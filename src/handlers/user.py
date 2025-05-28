@@ -83,7 +83,7 @@ async def user_search_profiles(message: Message, state: FSMContext):
             text_search_profiles_start,
             reply_markup=welcome_keyboard(),
         )
-        await state.set_state(SearchProfileStates.get_profile)
+        await state.set_state(SearchProfileStates.start)
     else:
         await message.answer(
             "Ты еще не создал свою анкету, создать?",

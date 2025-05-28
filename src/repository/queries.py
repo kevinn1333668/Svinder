@@ -109,4 +109,9 @@ class ProfileORM:
 
             random_profile = result.scalar_one_or_none()
 
+            if result:
+                 print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
+            else:
+                print("DEBUG: search_profile не нашел других профилей.")
+
             return random_profile

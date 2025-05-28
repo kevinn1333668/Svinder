@@ -19,7 +19,5 @@ class CreateProfileStates(StatesGroup):
 
 
 class SearchProfileStates(StatesGroup):
-    get_profile = State()
-    like = State()
-    dislike = State()
-
+    start = State()
+    viewing_profile = State()
