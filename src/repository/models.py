@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, List
 from datetime import datetime, timezone
 
-from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, Column
+from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum
@@ -45,7 +45,7 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     profile_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    tg_id: Mapped[int] = mapped_column(ForeignKey("users.tg_id"))
+    tg_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"))
 
     name: Mapped[Str100] = mapped_column(nullable=False)
     age: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -64,4 +64,21 @@ class Profile(Base):
 
     user: Mapped["User"] = relationship(
         back_populates="profile",
+    )
+
+
+class Like(Base):
+    __tablename__ = "likes"
+
+    like_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    liker_tgid: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"), nullable=False)
+    liked_tgid: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"), nullable=False)
+
+    is_accepted: Mapped[bool] = mapped_column(
+        Boolean, nullable=True, server_default=text("false")
+    )
+
+    __table_args__ = (
+        UniqueConstraint("liker_tgid", "liked_tgid", name="uq_liker_liked"),
     )

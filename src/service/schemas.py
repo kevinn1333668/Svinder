@@ -46,3 +46,13 @@ class ProfileCreateInternalSchema(BaseModel):
 
     s3_path: Annotated[str | None, Field()]
 
+
+class LikeSchema(BaseModel):
+    like_id: Annotated[int, Field()]
+    
+    liker_tgid: Annotated[int, Field()]
+    liked_tgid: Annotated[int, Field()]
+
+    is_accepted: Annotated[bool, Field(default=True)]
+
+    model_config = ConfigDict(from_attributes=True)

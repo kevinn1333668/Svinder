@@ -83,6 +83,7 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
 
     if action == "like":
         print(f"Лайк! {user_tg_id} -> {viewed_tg_id}")
+        await ServiceDB.like_profile(user_tg_id, viewed_tg_id)
         await callback_query.message.answer("👍")
         await send_next_profile(callback_query.message, user_tg_id, state, bot)
 

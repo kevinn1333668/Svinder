@@ -2,7 +2,7 @@ import jwt
 from random import randint 
 
 from src.config import settings
-from src.repository.queries import AsyncORM, UserORM, ProfileORM
+from src.repository.queries import AsyncORM, UserORM, ProfileORM, LikeORM
 from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema
 
 
@@ -99,4 +99,8 @@ class ServiceDB:
     async def get_profile_by_tgid(tgid: int) -> ProfileSchema | None:
         profile = await ProfileORM.get_profile_by_tgid(tgid)
         return ProfileSchema.model_validate(profile) if profile else None
+    
+    @staticmethod
+    async def like_profile(liker_tgid, liked_tgid: int):
+        await LikeORM.create_like(liker_tgid, liked_tgid)
     

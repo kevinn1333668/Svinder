@@ -1,7 +1,8 @@
 from sqlalchemy import func, text, select, update
+from sqlalchemy.exc import IntegrityError
 
 from src.repository.database import engine, Base, session_maker
-from src.repository.models import User, Profile  # noqa: F401
+from src.repository.models import User, Profile, Like # noqa: F401
 from src.service.schemas import ProfileCreateInternalSchema
 
 
@@ -138,3 +139,76 @@ class ProfileORM:
                 print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
 
             return random_profile
+               
+
+class LikeORM:
+    @staticmethod
+    async def get_like_by_id(like_id: int):
+        async with session_maker() as session:
+            result = await session.execute(select(Like).filter(Like.like_id == like_id))
+            return result.all_or_none()
+        
+    @staticmethod
+    async def create_like(liker_tgid, liked_tgid):
+        async with session_maker() as session:
+            try:
+                new_like = Like(
+                    liker_tgid=liker_tgid,
+                    liked_tgid=liked_tgid,
+                    is_accepted=False
+                )
+                session.add(new_like)
+                await session.commit()
+                return True
+            except IntegrityError:
+                return False
+
+    @staticmethod 
+    async def get_likes_by_liker_tgid(tg_id: int):
+        async with session_maker() as session:
+            result = await session.execute(select(Like).filter(Like.liker_tgid == tg_id))
+            return result.all_or_none()
+        
+    @staticmethod
+    async def get_likes_by_liked_tgid(tg_id: int):
+        async with session_maker() as session:
+            result = await session.execute(select(Like).filter(Like.liked_tgid == tg_id))
+            return result.scalars().all_or_none()
+        
+    @staticmethod
+    async def get_all_pending_likes_by_liked_tgid(tg_id: int):
+        async with session_maker() as session:
+            stmt = select(Like).where(
+                Like.liked_tgid == tg_id,
+                Like.is_accepted == False
+            )
+            result = await session.execute(stmt)
+            return result.scalars().all_or_none()
+
+    @staticmethod
+    async def get_all_accepted_likes_by_liker_tgid(tg_id: int):
+        async with session_maker() as session:
+            stmt = select(Like).where(
+                Like.liker_tgid == tg_id,
+                Like.is_accepted == True
+            )
+            result = await session.execute(stmt)
+            return result.scalars().all()
+        
+    @staticmethod
+    async def accept_like(like_id: int) -> bool:
+        async with session_maker() as session:
+            like_to_accept = await LikeORM.get_like_by_id(like_id)
+            
+            if like_to_accept is None:
+                return False
+            
+            like_to_accept.is_accepted = True
+            await session.commit()
+
+        if like_to_accept:
+            like_to_accept.is_accepted = True
+            await session.commit()
+            await session.refresh(like_to_accept)
+            return True
+        return False
