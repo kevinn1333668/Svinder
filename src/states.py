@@ -29,6 +29,12 @@ class EditProfileStates(StatesGroup):
     photo = State()
 
 
+class ViewLikesStates(StatesGroup):
+    choose_view_type = State()  
+    viewing_pending_likes = State()
+    viewing_accepted_likes = State()
+
+
 class SearchProfileStates(StatesGroup):
     start = State()
     viewing_profile = State()

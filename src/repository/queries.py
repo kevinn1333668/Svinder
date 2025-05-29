@@ -146,8 +146,17 @@ class LikeORM:
     async def get_like_by_id(like_id: int):
         async with session_maker() as session:
             result = await session.execute(select(Like).filter(Like.like_id == like_id))
-            return result.all_or_none()
+            return result.all()
         
+    @staticmethod
+    async def get_like_by_tgids(liker_tgid: int, liked_tgid: int):
+        async with session_maker() as session:
+            result = await session.execute(select(Like).filter(
+                Like.liker_tgid == liker_tgid,
+                Like.liked_tgid == liked_tgid
+            ))
+            return result.scalar_one_or_none()
+
     @staticmethod
     async def create_like(liker_tgid, liked_tgid):
         async with session_maker() as session:
@@ -188,13 +197,13 @@ class LikeORM:
     async def get_likes_by_liker_tgid(tg_id: int):
         async with session_maker() as session:
             result = await session.execute(select(Like).filter(Like.liker_tgid == tg_id))
-            return result.all_or_none()
+            return result.all()
         
     @staticmethod
     async def get_likes_by_liked_tgid(tg_id: int):
         async with session_maker() as session:
             result = await session.execute(select(Like).filter(Like.liked_tgid == tg_id))
-            return result.scalars().all_or_none()
+            return result.scalars().all()
         
     @staticmethod
     async def get_all_pending_likes_by_liked_tgid(tg_id: int):
@@ -204,7 +213,7 @@ class LikeORM:
                 Like.is_accepted == False
             )
             result = await session.execute(stmt)
-            return result.scalars().all_or_none()
+            return result.scalars().all()
 
     @staticmethod
     async def get_all_accepted_likes_by_liker_tgid(tg_id: int):
@@ -217,19 +226,21 @@ class LikeORM:
             return result.scalars().all()
         
     @staticmethod
-    async def accept_like(like_id: int) -> bool:
+    async def accept_like(liker_tgid: int, liked_tgid: int) -> bool:
         async with session_maker() as session:
-            like_to_accept = await LikeORM.get_like_by_id(like_id)
-            
-            if like_to_accept is None:
+            like = await session.execute(
+                select(Like).where(
+                    Like.liker_tgid == liker_tgid,
+                    Like.liked_tgid == liked_tgid
+                )
+            )
+            like = like.scalar_one_or_none()
+
+            if like is None:
                 return False
             
-            like_to_accept.is_accepted = True
+            like.is_accepted = True
+            
             await session.commit()
 
-        if like_to_accept:
-            like_to_accept.is_accepted = True
-            await session.commit()
-            await session.refresh(like_to_accept)
             return True
-        return False

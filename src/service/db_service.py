@@ -110,6 +110,10 @@ class ServiceDB:
         await LikeORM.delete_like(liker_tgid, liked_tgid)
 
     @staticmethod
+    async def accept_like(liker_tgid: int, liked_tgid: int):
+        await LikeORM.accept_like(liker_tgid, liked_tgid)
+
+    @staticmethod
     async def get_pending_likes(liked_tgid: int) -> List[LikeSchema]:
         likes_data = await LikeORM.get_all_pending_likes_by_liked_tgid(liked_tgid)
 
