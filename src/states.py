@@ -19,6 +19,16 @@ class CreateProfileStates(StatesGroup):
     photo = State()
 
 
+class EditProfileStates(StatesGroup):
+    start = State()
+    name = State()
+    age = State()
+    sex = State()
+    university = State()
+    description = State()
+    photo = State()
+
+
 class SearchProfileStates(StatesGroup):
     start = State()
     viewing_profile = State()

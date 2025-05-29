@@ -95,6 +95,27 @@ class ProfileORM:
             session.add(new_profile)
             
             await session.commit()
+
+    @staticmethod
+    async def update_profile(profile_data: ProfileCreateInternalSchema):
+        async with session_maker() as session:
+            stmt = select(Profile).where(Profile.tg_id == profile_data.tg_id)
+            result = await session.execute(stmt)
+            existing_profile = result.scalars().one_or_none()
+
+            if existing_profile:
+                existing_profile.name = profile_data.name
+                existing_profile.age = profile_data.age
+                existing_profile.sex = profile_data.sex
+                existing_profile.uni = profile_data.uni
+                existing_profile.description = profile_data.description
+                existing_profile.s3_path = profile_data.s3_path
+
+                await session.commit()
+                # await session.refresh(existing_profile) 
+                return True
+            else:
+                return False
     
     @staticmethod
     async def get_random_profile_except_tgid(curr_user_tgid: int) -> Profile | None:

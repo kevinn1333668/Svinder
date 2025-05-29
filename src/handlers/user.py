@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 
 from src.config import settings
 from src.service.db_service import ServiceDB
-from src.states import SearchProfileStates, UserRoadmap, CreateProfileStates
+from src.states import SearchProfileStates, UserRoadmap, CreateProfileStates, EditProfileStates
 
 from src.service.llm import llm_generate, llm_init_agent, llm_generate_simple
 
@@ -132,6 +132,15 @@ async def user_chat_with_ai(message: Message, state: FSMContext):
             "Бот, Пожалуйста, введи текст для общения с ботом.",
             reply_markup=ReplyKeyboardRemove(),
         )
+
+
+@user_router.message(UserRoadmap.main_menu, F.text == text_edit_profile)
+async def user_start_edit_profile(message: Message, state: FSMContext):
+    await message.answer(
+        "Ну что же, давай отредактируем твою анкету",
+        reply_markup=welcome_keyboard(),
+    )
+    await state.set_state(EditProfileStates.start)
 
 
 @user_router.message(UserRoadmap.main_menu)

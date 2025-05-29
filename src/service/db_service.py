@@ -87,7 +87,16 @@ class ServiceDB:
         await ProfileORM.create_profile(profile_to_add)
 
     @staticmethod
+    async def update_profile(profile_to_update: ProfileCreateInternalSchema):
+        await ProfileORM.update_profile(profile_to_update)
+
+    @staticmethod
     async def search_profile(curr_user_tgid: int) -> ProfileSchema:
         profile = await ProfileORM.get_random_profile_except_tgid(curr_user_tgid)
+        return ProfileSchema.model_validate(profile) if profile else None
+    
+    @staticmethod
+    async def get_profile_by_tgid(tgid: int) -> ProfileSchema | None:
+        profile = await ProfileORM.get_profile_by_tgid(tgid)
         return ProfileSchema.model_validate(profile) if profile else None
     
