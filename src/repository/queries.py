@@ -162,6 +162,27 @@ class LikeORM:
                 return True
             except IntegrityError:
                 return False
+            
+    @staticmethod
+    async def delete_like(liker_tgid, liked_tgid):
+        async with session_maker() as session:
+            try:
+                like = await session.execute(
+                    select(Like).where(
+                        Like.liker_tgid == liker_tgid,
+                        Like.liked_tgid == liked_tgid
+                    )
+                )
+                like = like.scalar_one_or_none()
+                
+                if like:
+                    await session.delete(like)
+                    await session.commit()
+                    return True
+                return False
+            except Exception:
+                await session.rollback()
+                return False
 
     @staticmethod 
     async def get_likes_by_liker_tgid(tg_id: int):

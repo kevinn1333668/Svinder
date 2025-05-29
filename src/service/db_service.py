@@ -1,9 +1,10 @@
+from typing import List
 import jwt
 from random import randint 
 
 from src.config import settings
 from src.repository.queries import AsyncORM, UserORM, ProfileORM, LikeORM
-from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema
+from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema, LikeSchema
 
 
 class ServiceDB:
@@ -103,4 +104,30 @@ class ServiceDB:
     @staticmethod
     async def like_profile(liker_tgid, liked_tgid: int):
         await LikeORM.create_like(liker_tgid, liked_tgid)
+
+    @staticmethod
+    async def reject_like(liker_tgid: int, liked_tgid: int): 
+        await LikeORM.delete_like(liker_tgid, liked_tgid)
+
+    @staticmethod
+    async def get_pending_likes(liked_tgid: int) -> List[LikeSchema]:
+        likes_data = await LikeORM.get_all_pending_likes_by_liked_tgid(liked_tgid)
+
+        if likes_data is None:
+            return None
+        
+        likes = [LikeSchema.model_validate(like) for like in likes_data]
+            
+        return likes
+    
+    @staticmethod
+    async def get_accepted_likes(liker_tgid: int) -> List[LikeSchema]:
+        likes_data = await LikeORM.get_all_accepted_likes_by_liker_tgid(liker_tgid)
+
+        if likes_data is None:
+            return None
+        
+        likes = [LikeSchema.model_validate(like) for like in likes_data]
+            
+        return likes
     
