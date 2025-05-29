@@ -112,7 +112,7 @@ class ProfileORM:
                 existing_profile.s3_path = profile_data.s3_path
 
                 await session.commit()
-                # await session.refresh(existing_profile) 
+                await session.refresh(existing_profile) 
                 return True
             else:
                 return False
@@ -130,9 +130,11 @@ class ProfileORM:
 
             random_profile = result.scalar_one_or_none()
 
-            if result:
-                 print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
-            else:
+            print("I SEE", random_profile)
+
+            if random_profile is None:
                 print("DEBUG: search_profile не нашел других профилей.")
+            else:
+                print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
 
             return random_profile

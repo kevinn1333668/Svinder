@@ -1,7 +1,7 @@
 from typing import Annotated
 from datetime import datetime, timezone
 
-from sqlalchemy import text, Boolean, Integer, ForeignKey
+from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum
@@ -9,14 +9,22 @@ from src.repository.database import Base
 
 
 created_at_type = Annotated[
-    datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))
+    datetime,
+    mapped_column(
+        DateTime(timezone=True),
+        server_default=text("TIMEZONE('utc', now())"),
+        nullable=False
+    )
 ]
+
 modified_at_type = Annotated[
     datetime,
     mapped_column(
+        DateTime(timezone=True),
         server_default=text("TIMEZONE('utc', now())"),
-        onupdate=datetime.now(timezone.utc),
-    ),
+        onupdate=text("TIMEZONE('utc', now())"), # onupdate=text("TIMEZONE('utc', now())"), # АЛЬТЕРНАТИВНЫЙ, более явный вариант для onupdate
+        nullable=False
+    )
 ]
 
 

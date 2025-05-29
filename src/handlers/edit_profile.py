@@ -36,7 +36,7 @@ def sex_selection_horizontal_keyboard_with_skip() -> ReplyKeyboardMarkup:
 async def edit_profile_start(message: Message, state: FSMContext, bot: Bot):
     current_profile = await ServiceDB.get_profile_by_tgid(message.from_user.id)
     if not current_profile:
-        await message.answer("Сначала нужно создать анкету. /create_profile", reply_markup=main_menu_keyboard())
+        await message.answer("Сначала нужно создать анкету...", reply_markup=main_menu_keyboard())
         await state.clear()
         return
 
