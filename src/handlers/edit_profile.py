@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from aiogram import F, Bot, Router
-from aiogram.types import Message, FSInputFile, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 
 from src.states import UserRoadmap, EditProfileStates
@@ -39,11 +39,10 @@ async def edit_profile_start(message: Message, state: FSMContext, bot: Bot):
         await message.answer("Сначала нужно создать анкету...", reply_markup=main_menu_keyboard())
         await state.clear()
         return
-
     await state.update_data(
         original_name=current_profile.name,
         original_age=current_profile.age,
-        original_sex=current_profile.sex,
+        original_sex=current_profile.sex.value,
         original_uni=current_profile.uni,
         original_description=current_profile.description,
         original_s3_path=current_profile.s3_path
@@ -109,30 +108,27 @@ async def edit_profile_sex(message: Message, state: FSMContext):
         await message.answer("Выберите пол из предложенных или оставьте как есть.", reply_markup=sex_selection_horizontal_keyboard_with_skip())
         return
     else:
-        await state.update_data(sex='female' if message.text == text_female else 'male')
+        await state.update_data(sex='Девочка' if message.text == text_female else 'Мальчик')
 
     updated_data = await state.get_data()
     await message.answer(
-        f"Пол обновлен на: {updated_data['sex']}. Текущий университет: {data['original_uni']}. Введите новый или оставьте как есть.",
+        f"Пол обновлен на: {updated_data['sex']}. Текущий город: {data['original_uni']}. Введите новый или оставьте как есть.",
         reply_markup=skip_keyboard()
     )
     await state.set_state(EditProfileStates.university)
 
 
 @edit_router.message(EditProfileStates.university)
-async def edit_profile_university(message: Message, state: FSMContext):
+async def edit_profile_city(message: Message, state: FSMContext):
     data = await state.get_data()
     if message.text == TEXT_SKIP_BUTTON:
         await state.update_data(uni=data["original_uni"])
-    elif message.text.upper() not in ["БГУ", "БГУИР", "БНТУ", "БГТУ", "БГМУ", "МГЛУ", "БГЭУ", "СКОРИНА", "СКАРЫНА", "СКОРЫНА", "ГГМУ"]:
-        await message.answer("Такого вуза нет в списке. Попробуйте еще раз или оставьте как есть.", reply_markup=skip_keyboard())
-        return
     else:
         await state.update_data(uni=message.text.upper())
 
     updated_data = await state.get_data()
     await message.answer(
-        f"Университет обновлен на: {updated_data['uni']}. Текущее описание: \"{data['original_description']}\". Напишите новое или оставьте как есть.",
+        f"Город обновлен на: {updated_data['uni']}. Текущее описание: \"{data['original_description']}\". Напишите новое или оставьте как есть.",
         reply_markup=skip_keyboard()
     )
     await state.set_state(EditProfileStates.description)
@@ -157,9 +153,9 @@ async def edit_profile_description(message: Message, state: FSMContext):
         f"Описание обновлено. Текущее фото: (отправлю его следующим сообщением, если есть).\nОтправьте новое фото или нажмите 'Оставить как есть'.",
         reply_markup=skip_keyboard()
     )
-    if data.get("original_s3_path") and Path(data["original_s3_path"]).exists():
+    if data.get("original_s3_path"):
         try:
-            original_photo = FSInputFile(data["original_s3_path"])
+            original_photo = data["original_s3_path"]
             await message.answer_photo(photo=original_photo, caption="Текущее фото.")
         except Exception as e:
             print(f"Error sending original photo: {e}")
@@ -174,25 +170,15 @@ async def edit_profile_photo(message: Message, state: FSMContext, bot: Bot):
     final_s3_path = data["original_s3_path"]
 
     if message.text == TEXT_SKIP_BUTTON:
-        pass
+        file_id=final_s3_path
     elif not message.photo:
         await message.answer("Это не фото. Отправьте фото или оставьте старое.", reply_markup=skip_keyboard())
         return
     else:
-        photo_size = message.photo[-1]
-        new_dest_path = UPLOAD_DIR_EDIT / (str(message.from_user.id) + ".jpg")
+        file_id = message.photo[-1].file_id
         
-        try:
-            await bot.download(
-                photo_size,
-                destination=new_dest_path
-            )
-            final_s3_path = str(new_dest_path)
-        except Exception as e:
-            await message.answer("Не удалось загрузить новое фото. Будет использовано старое, если оно есть.")
-            print(f"Error downloading new photo: {e}")
 
-    await state.update_data(s3_path=final_s3_path)
+    await state.update_data(s3_path=file_id)
     
     updated_data = await state.get_data()
 
@@ -218,14 +204,14 @@ async def edit_profile_photo(message: Message, state: FSMContext, bot: Bot):
         f"Анкета обновлена!\n"
         f"Имя: {profile_update_schema.name}\n"
         f"Возраст: {profile_update_schema.age}\n"
-        f"Пол: {profile_update_schema.sex}\n"
-        f"Университет: {profile_update_schema.uni}\n"
+        f"Пол: {profile_update_schema.sex.value}\n"
+        f"Город: {profile_update_schema.uni}\n"
         f"Описание: {profile_update_schema.description}"
     )
 
-    if updated_data["s3_path"] and Path(updated_data["s3_path"]).exists():
+    if updated_data["s3_path"]:
         try:
-            final_profile_image = FSInputFile(updated_data["s3_path"])
+            final_profile_image = updated_data["s3_path"]
             await message.answer_photo(
                 photo=final_profile_image,
                 caption=caption_text,

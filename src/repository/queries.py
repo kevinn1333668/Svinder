@@ -1,9 +1,11 @@
-from sqlalchemy import func, text, select, update
+from sqlalchemy import func, text, select, update, union, delete, exists
 from sqlalchemy.exc import IntegrityError
 
 from src.repository.database import engine, Base, session_maker
-from src.repository.models import User, Profile, Like # noqa: F401
+from src.repository.models import User, Profile, Like, Complain, Ban, Dislike # noqa: F401
 from src.service.schemas import ProfileCreateInternalSchema
+
+from datetime import datetime, timedelta
 
 
 class AsyncORM:
@@ -22,12 +24,11 @@ class AsyncORM:
 
 class UserORM:
     @staticmethod
-    async def create_user(tg_id: int, invites: int, invite_code: str | None):
+    async def create_user(tg_id: int, username: str | None = None):
         async with session_maker() as session:
             new_user = User(
                 tg_id = tg_id,
-                invites=invites,
-                invite_code=invite_code,
+                username=username
             )
             session.add(new_user)
             
@@ -70,6 +71,18 @@ class UserORM:
                 
             await session.commit()
             return True
+    @staticmethod
+    async def get_user_by_username(username: str) -> User | None:
+        """
+        Находит пользователя по username (без учёта регистра).
+        :param username: имя пользователя без @, например: "john_doe"
+        :return: объект User или None
+        """
+        async with session_maker() as session:
+            result = await session.execute(
+                select(User).where(func.lower(User.username) == func.lower(username.strip()))
+            )
+            return result.scalar_one_or_none()
         
     
 class ProfileORM:
@@ -121,8 +134,24 @@ class ProfileORM:
     @staticmethod
     async def get_random_profile_except_tgid(curr_user_tgid: int) -> Profile | None:
         async with session_maker() as session:
+
+            user_profile = await ProfileORM.get_profile_by_tgid(curr_user_tgid)
+
+            if user_profile is None:
+                return None
+
+            excluded_tgids = union(
+                select(Like.liked_tgid).where(Like.liker_tgid == curr_user_tgid),
+                select(Complain.profile_tg_id).where(Complain.user_tg_id == curr_user_tgid),
+                select(Dislike.profile_id).where((Dislike.user_id == curr_user_tgid) & (Dislike.until > datetime.now()))
+            ).subquery()
+
+
+
             stmt = select(Profile).where(
-                Profile.tg_id != curr_user_tgid
+                Profile.tg_id != curr_user_tgid,
+                Profile.sex != user_profile.sex,
+                Profile.tg_id.notin_(select(excluded_tgids))
             ).order_by(
                 func.random()
             ).limit(1)
@@ -139,6 +168,58 @@ class ProfileORM:
                 print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
 
             return random_profile
+        
+    @staticmethod
+    async def delete_profile_by_tg_id(tg_id: int):
+        async with session_maker() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(User).where(User.tg_id == tg_id)
+                    )
+                user = result.scalar()  
+                
+                if not user:
+                    return False
+
+
+                # 1. Лайки, где пользователь — автор
+                await session.execute(
+                    delete(Like).where(Like.liker_tgid == tg_id)
+                )
+
+                # 2. Лайки, где пользователь — цель
+                await session.execute(
+                    delete(Like).where(Like.liked_tgid == tg_id)
+                )
+
+                # 3. Жалобы, где пользователь — автор
+                await session.execute(
+                    delete(Complain).where(Complain.user_tg_id == tg_id)
+                )
+
+                # 4. Жалобы, где пользователь — цель
+                await session.execute(
+                    delete(Complain).where(Complain.profile_tg_id == tg_id)
+                )
+
+                # 5. Дизлайки
+                await session.execute(
+                    delete(Dislike).where(Dislike.user_id == tg_id)
+                )
+
+                await session.execute(
+                    delete(Dislike).where(Dislike.profile_id == tg_id)
+                )
+
+                # 6. Удаляем профиль
+                await session.execute(
+                    delete(Profile).where(Profile.tg_id == tg_id)
+                )
+
+                # 8. Удаляем пользователя
+                await session.delete(user)
+
+            return True
                
 
 class LikeORM:
@@ -210,7 +291,8 @@ class LikeORM:
         async with session_maker() as session:
             stmt = select(Like).where(
                 Like.liked_tgid == tg_id,
-                Like.is_accepted == False
+                Like.is_accepted == False,
+                ~exists().where(Complain.profile_tg_id == Like.liker_tgid)
             )
             result = await session.execute(stmt)
             return result.scalars().all()
@@ -244,3 +326,157 @@ class LikeORM:
             await session.commit()
 
             return True
+        
+class ComplaintORM:
+
+    @staticmethod
+    async def add_complaint(user_id: int, target_id: int) -> bool:
+        async with session_maker() as session:
+            try:
+                complaint = Complain(user_tg_id=user_id, profile_tg_id=target_id)
+
+                session.add(complaint)
+                await session.commit()
+                return True
+
+            except IntegrityError:
+                return False
+            
+
+class BanORM:
+    @staticmethod
+    async def ban_user(tg_id: int) -> bool:
+        async with session_maker() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(User).where(User.tg_id == tg_id)
+                    )
+                user = result.scalar()  
+                
+                if not user:
+                    return False
+                
+                existing_ban = await session.execute(select(Ban).where(Ban.tg_id == tg_id))
+                if existing_ban.scalar_one_or_none():
+                    return True  # Уже в бане
+
+
+                # 1. Лайки, где пользователь — автор
+                await session.execute(
+                    delete(Like).where(Like.liker_tgid == tg_id)
+                )
+
+                # 2. Лайки, где пользователь — цель
+                await session.execute(
+                    delete(Like).where(Like.liked_tgid == tg_id)
+                )
+
+                # 3. Жалобы, где пользователь — автор
+                await session.execute(
+                    delete(Complain).where(Complain.user_tg_id == tg_id)
+                )
+
+                # 4. Жалобы, где пользователь — цель
+                await session.execute(
+                    delete(Complain).where(Complain.profile_tg_id == tg_id)
+                )
+
+                # 5. Дизлайки
+                await session.execute(
+                    delete(Dislike).where(Dislike.user_id == tg_id)
+                )
+
+                await session.execute(
+                    delete(Dislike).where(Dislike.profile_id == tg_id)
+                )
+
+                # 6. Удаляем профиль
+                await session.execute(
+                    delete(Profile).where(Profile.tg_id == tg_id)
+                )
+
+                # 7. Добавляем в бан
+                session.add(Ban(tg_id=tg_id))
+
+                # 8. Удаляем пользователя
+                await session.delete(user)
+
+            return True
+    
+    @staticmethod
+    async def is_banned(tg_id: int) -> bool:
+        async with session_maker() as session:
+            result = await session.execute(
+                select(Ban).where(Ban.tg_id == tg_id)
+            )
+            return result.scalar_one_or_none() is not None
+        
+    @staticmethod
+    async def unban_user(ban_id: int) -> bool:
+        async with session_maker() as session:
+            async with session.begin():
+                result = await session.execute(
+                    delete(Ban).where(Ban.ban_id==ban_id)
+                )
+            return result.rowcount > 0
+        
+    @staticmethod
+    async def get_primary_key(tg_id: int) -> int | None:
+        async with session_maker() as session:
+            result = await session.execute(
+                select(Ban.ban_id).where(Ban.tg_id == tg_id)
+            )
+            ban_id = result.scalar_one_or_none()
+            return ban_id
+        
+    @staticmethod
+    async def get_ban_by_ban_id(ban_id: int) -> Ban:
+        async with session_maker() as session:
+            result = await session.execute(
+                select(Ban).where(Ban.ban_id == ban_id)
+            )
+            ban = result.scalar_one_or_none()
+            return ban
+
+    @staticmethod
+    async def get_ban_by_tg_id(tg_id: int) -> Ban:
+        async with session_maker() as session:
+            result = await session.execute(
+                select(Ban).where(Ban.tg_id == tg_id)
+            )
+            ban = result.scalar_one_or_none()
+
+            return ban   
+
+        
+
+class DislikeORM:
+    @staticmethod
+    async def add_dislike(user_id: int, target_id: int):
+        async with session_maker() as session:
+            async with session.begin():
+
+                result = await session.execute(
+                    select(Dislike).where(
+                    Dislike.user_id == user_id,
+                    Dislike.profile_id == target_id
+                    )
+                )
+
+                existing = result.scalar_one_or_none()
+
+                new_until = datetime.now() + timedelta(minutes=1)
+
+                if existing:
+                    existing.until = new_until
+
+                else:
+                    dislike = Dislike(
+                        user_id=user_id,
+                        profile_id=target_id,
+                        until=new_until
+                    )
+                    session.add(dislike)
+
+            return True
+                

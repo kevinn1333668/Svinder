@@ -2,7 +2,7 @@ import asyncio
 from typing import List, Optional
 
 from aiogram import Router, Bot, F
-from aiogram.types import Message, CallbackQuery, FSInputFile, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 
@@ -80,11 +80,11 @@ async def show_next_pending_like_profile(target_message: Message, state: FSMCont
 
     if profile_data:
         try:
-            profile_image = FSInputFile(str(profile_data.s3_path))
+            file_id = profile_data.s3_path
             telegram_user_info = await get_telegram_username_or_name(bot, liker_tg_id_to_show)
             
             await target_message.answer_photo(
-                photo=profile_image,
+                photo=file_id,
                 caption=(
                     f"Вам симпатизирует: {profile_data.name}, {profile_data.age} лет, {profile_data.uni}\n"
                     f"{profile_data.description}\n\n"
@@ -184,14 +184,14 @@ async def process_view_my_mutual_likes(callback_query: CallbackQuery, state: FSM
 
         if profile_data:
             try:
-                profile_image = FSInputFile(str(profile_data.s3_path))
+                file_id = profile_data.s3_path
                 telegram_user_info = await get_telegram_username_or_name(bot, mutual_profile_tg_id)
                 
                 await callback_query.message.answer_photo(
-                    photo=profile_image,
+                    photo=file_id,
                     caption=(
                         f"Взаимная симпатия с: {profile_data.name}, {profile_data.age}\n"
-                        f"Университет: {profile_data.uni}\n"
+                        f"Город: {profile_data.uni}\n"
                         f"О себе: {profile_data.description}\n\n"
                         f"Связь: {telegram_user_info}"
                     )
@@ -227,7 +227,5 @@ async def process_back_buttons_likes(callback_query: CallbackQuery, state: FSMCo
 
     elif action == "back_to_view_likes_menu":
         await state.set_state(ViewLikesStates.choose_view_type)
-        await callback_query.message.edit_text(
-            "Меню лайков:",
-            reply_markup=view_likes_menu_keyboard()
-        )
+        await callback_query.message.delete()
+        await callback_query.message.answer("Меню лайков:", reply_markup=view_likes_menu_keyboard())

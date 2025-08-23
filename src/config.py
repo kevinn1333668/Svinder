@@ -3,16 +3,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     BOT_TOKEN: str
-    LLM_TOKEN: str
-    ADMIN_TOKEN: str
+    #ADMIN_TOKEN: str
 
     DB_USER: str
     DB_PASS: str
     DB_NAME: str
 
-    JWT_SECRET: str
+    #JWT_SECRET: str
     
-    ADMIN_ID: int
+    ADMIN_CHAT_ID: int
+    ADMINS_IDS: list[int]
 
     @property
     def database_url(self):

@@ -56,3 +56,8 @@ class LikeSchema(BaseModel):
     is_accepted: Annotated[bool, Field(default=True)]
 
     model_config = ConfigDict(from_attributes=True)
+
+class BanSchema(BaseModel):
+    ban_id: Annotated[int, Field()]
+
+    tg_id: int

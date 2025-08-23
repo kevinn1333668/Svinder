@@ -1,7 +1,7 @@
 from typing import Annotated, List
 from datetime import datetime, timezone
 
-from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, UniqueConstraint, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum
@@ -33,8 +33,7 @@ class User(Base):
 
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tg_id: Mapped[TgID] = mapped_column(nullable=False, unique=True)
-    invites: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
-    invite_code: Mapped[Str256] = mapped_column(nullable=True)
+    username: Mapped[str] = mapped_column(String, nullable=True)
 
     profile: Mapped["Profile"] = relationship(
         back_populates="user",
@@ -45,7 +44,7 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     profile_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    tg_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"))
+    tg_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"), unique=True)
 
     name: Mapped[Str100] = mapped_column(nullable=False)
     age: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -72,8 +71,8 @@ class Like(Base):
 
     like_id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    liker_tgid: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"), nullable=False)
-    liked_tgid: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id"), nullable=False)
+    liker_tgid: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
+    liked_tgid: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
 
     is_accepted: Mapped[bool] = mapped_column(
         Boolean, nullable=True, server_default=text("false")
@@ -81,4 +80,37 @@ class Like(Base):
 
     __table_args__ = (
         UniqueConstraint("liker_tgid", "liked_tgid", name="uq_liker_liked"),
+    )
+
+class Complain(Base):
+    __tablename__ = "complaints"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    
+    user_tg_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
+    profile_tg_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_tg_id", "profile_tg_id", name="uq_user_profile"),
+    )
+
+class Ban(Base):
+    __tablename__ = "bans"
+
+    ban_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tg_id: Mapped[TgID] = mapped_column(unique=True, nullable=False)
+
+class Dislike(Base):
+    __tablename__ = "dislike"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
+    profile_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
+    until: Mapped[DateTime] = mapped_column(
+        DateTime,
+        server_default=text("TIMEZONE('utc', NOW()) + INTERVAL '1 day'")
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "profile_id", name='uq_dislike_user_profile'),
     )

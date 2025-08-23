@@ -1,43 +1,18 @@
 from typing import List
-import jwt
 from random import randint 
 
 from src.config import settings
-from src.repository.queries import AsyncORM, UserORM, ProfileORM, LikeORM
-from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema, LikeSchema
+from src.repository.queries import AsyncORM, UserORM, ProfileORM, LikeORM, ComplaintORM, BanORM, DislikeORM
+from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema, LikeSchema, BanSchema
+
+from typing import List, Optional
 
 
 class ServiceDB:
-    @staticmethod
-    def generate_invite_code(tg_id: int):
-        return jwt.encode({'sub': str(tg_id), 'random': randint(1,1000000000)}, settings.JWT_SECRET, algorithm="HS256")
-    
-    @staticmethod
-    async def is_valid_code(code: str):
-        try:
-            payload = dict(jwt.decode(code, settings.JWT_SECRET, algorithms=["HS256"]))
-        except jwt.exceptions.InvalidTokenError as e:
-            print(e)
-            return False
-        
-        print(payload)
-        inviter_tgid = int(payload.get("sub"))
-
-        print(inviter_tgid)
-
-        if inviter_tgid is None:
-            return False
-        
-        user_data = await UserORM.get_user_by_tgid(inviter_tgid)
-        user = UserSchema.model_validate(user_data)
-        
-        if user.invite_code == code and user.invites > 0:
-                new_code = ServiceDB.generate_invite_code(inviter_tgid)
-                await UserORM.update_invites_and_code_by_tgid(inviter_tgid, user.invites-1, new_code)
-                return True
-        return False
 
     
+    
+
     @staticmethod
     async def is_user_exist_by_tgid(tg_id: int) -> bool:
         user = await UserORM.get_user_by_tgid(tg_id)
@@ -72,9 +47,12 @@ class ServiceDB:
         return (user.invites, user.invite_code)
 
     @staticmethod
-    async def add_user(tg_id: int):
-        invite_token = ServiceDB.generate_invite_code(tg_id)
-        await UserORM.create_user(tg_id, 3, invite_token)
+    async def add_user(tg_id: int, username: str | None = None):
+        await UserORM.create_user(tg_id, username)
+
+    @staticmethod
+    async def get_user_by_usernameORM(username: str):
+        return await UserORM.get_user_by_username(username)
 
     @staticmethod
     async def is_profile_exist_by_tgid(tg_id: int) -> bool:
@@ -97,9 +75,15 @@ class ServiceDB:
         return ProfileSchema.model_validate(profile) if profile else None
     
     @staticmethod
+    async def delete_profile(tg_id: int) -> int:
+        return await ProfileORM.delete_profile_by_tg_id(tg_id=tg_id)
+
+    
+    @staticmethod
     async def get_profile_by_tgid(tgid: int) -> ProfileSchema | None:
         profile = await ProfileORM.get_profile_by_tgid(tgid)
         return ProfileSchema.model_validate(profile) if profile else None
+    
     
     @staticmethod
     async def like_profile(liker_tgid, liked_tgid: int):
@@ -134,4 +118,39 @@ class ServiceDB:
         likes = [LikeSchema.model_validate(like) for like in likes_data]
             
         return likes
+    
+    @staticmethod
+    async def report_profile(user_id: int, target_id: int):
+        await ComplaintORM.add_complaint(user_id=user_id, target_id=target_id)
+
+    @staticmethod
+    async def ban_profile(tg_id: int):
+        return await BanORM.ban_user(tg_id=tg_id)
+    
+    @staticmethod
+    async def unban_profile(ban_id: int):
+        return await BanORM.unban_user(ban_id=ban_id)
+
+    @staticmethod
+    async def is_user_banned(tg_id: int):
+        return await BanORM.is_banned(tg_id=tg_id)
+    
+    @staticmethod
+    async def get_ban_id(tg_id: int) -> int | None:
+        return await BanORM.get_primary_key(tg_id=tg_id)
+    
+    @staticmethod
+    async def get_ban_by_ban_id_ORM(ban_id: int) -> BanSchema:
+        return await BanORM.get_ban_by_ban_id(ban_id=ban_id)
+    @staticmethod
+    async def get_ban_by_tg_id_ORM(tg_id: int) -> BanSchema:
+        return await BanORM.get_ban_by_tg_id(tg_id=tg_id)
+
+    @staticmethod
+    async def create_dislike(user_id: int, target_id: int) -> bool:
+        return await DislikeORM.add_dislike(user_id=user_id, target_id=target_id)
+
+    
+    
+
     

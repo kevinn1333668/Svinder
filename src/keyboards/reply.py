@@ -2,8 +2,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from src.static.text.texts import (
     text_search_profiles, text_edit_profile,
-    text_show_invite_code, text_go_to_deepseek,
-    text_yes, text_no, text_male, text_female, text_my_likes
+    text_my_profile,
+    text_yes, text_no, text_male, text_female, text_my_likes, text_delete_profile,
 )
 
 
@@ -34,15 +34,6 @@ def go_to_main_menu() -> ReplyKeyboardMarkup:
     )
 
 
-def go_to_check_token() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="Сейчас будут документы")]
-        ],
-        resize_keyboard=True,
-    )
-
-
 def sex_selection_vertical_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -67,7 +58,6 @@ def yes_or_no_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[
                 KeyboardButton(text=text_yes),
-                KeyboardButton(text=text_no)
         ]],
         resize_keyboard=True,
     )
@@ -76,10 +66,10 @@ def yes_or_no_keyboard() -> ReplyKeyboardMarkup:
 def main_menu_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=text_search_profiles)],
-            [KeyboardButton(text=text_edit_profile)],
-            [KeyboardButton(text=text_show_invite_code)],
-            [KeyboardButton(text=text_my_likes), KeyboardButton(text=text_go_to_deepseek)],
+            [KeyboardButton(text=text_search_profiles), KeyboardButton(text=text_edit_profile)],
+            [KeyboardButton(text=text_my_likes)],
+            [KeyboardButton(text=text_my_profile)],
+            [KeyboardButton(text=text_delete_profile)],
         ],
         resize_keyboard=True,
     )

@@ -6,8 +6,9 @@ def profile_action_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[[
                 InlineKeyboardButton(text="♥️", callback_data="like"),
                 InlineKeyboardButton(text="👎", callback_data="next"),
-                InlineKeyboardButton(text="💤", callback_data="main_menu")
-        ]]
+                InlineKeyboardButton(text="🚪", callback_data="main_menu")
+        ],
+        [InlineKeyboardButton(text="Пожаловаться", callback_data="complain")]]
     )
 
 
@@ -40,5 +41,21 @@ def pending_like_action_keyboard(liker_tg_id: int) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text="Меню лайков ☰", callback_data="back_to_view_likes_menu"),
             ]
+        ]
+    )
+
+def confirm_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Да", callback_data="complain_confirm")],
+            [InlineKeyboardButton(text="Нет", callback_data="complain_cancel")]
+        ]
+    )
+
+def moderation_keyboard(reported_tg_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Одобрить", callback_data=f"approve_{reported_tg_id}"),
+            InlineKeyboardButton(text="❌ Забанить", callback_data=f"ban_{reported_tg_id}")]
         ]
     )

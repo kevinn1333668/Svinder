@@ -12,5 +12,5 @@ Str32 = NewType("Str32", str)
 
 
 class SexEnum(Enum):
-    MALE = "male"
-    FEMALE = "female"
+    MALE = "Мальчик"
+    FEMALE = "Девочка"

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from aiogram import F, Bot
 from aiogram import Router
-from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
 from src.states import UserRoadmap, CreateProfileStates
@@ -21,7 +21,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 @profile_router.message(CreateProfileStates.start)
 async def profile_start(message: Message, state: FSMContext):
     await message.answer(
-        "Введи свое имя",
+        "Введи свой никнейм на сервере",
         reply_markup=ReplyKeyboardRemove()
     )
     await state.set_state(CreateProfileStates.name)
@@ -83,11 +83,11 @@ async def profile_sex(message: Message, state: FSMContext):
         )
     else:
         if message.text == text_female:
-            await state.update_data(sex='female')
+            await state.update_data(sex='Девочка')
         else:
-            await state.update_data(sex='male')
+            await state.update_data(sex='Мальчик')
         await message.answer(
-            "Записал. Теперь скажи свой университет",
+            "Записал. Теперь скажи свой город",
             reply_markup=ReplyKeyboardRemove(),
         )
         await state.set_state(CreateProfileStates.university)
@@ -95,25 +95,19 @@ async def profile_sex(message: Message, state: FSMContext):
 
 @profile_router.message(CreateProfileStates.university)
 async def profile_university(message: Message, state: FSMContext):
-    if message.text.upper() not in ["БГУ", "БГУИР", "БНТУ", "БГТУ", "БГМУ", "МГЛУ", "БГЭУ", "СКОРИНА", "СКАРЫНА", "СКОРЫНА", "ГГМУ"]:
-        await message.answer(
-            "Это разве уник? Давай по-нормальному",
-            reply_markup=ReplyKeyboardRemove()
-        )
-    else:
-        await state.update_data(uni=message.text.upper())
-        await message.answer(
-            "Напиши о себе: хобби, интересы и увлечения",
-            reply_markup=ReplyKeyboardRemove(),
-        )
-        await state.set_state(CreateProfileStates.description)
+    await state.update_data(uni=message.text.upper())
+    await message.answer(
+        "Напиши о себе: хобби, интересы и увлечения на сервере (реальные данные по желанию)",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    await state.set_state(CreateProfileStates.description)
 
 
 @profile_router.message(CreateProfileStates.description)
 async def profile_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await message.answer(
-        f"Последний этап! Отправь фото для своей анкеты.",
+        f"Последний этап! Отправь одно фото себя на СЕРВЕРЕ для своей анкеты.\n Любые другие фото приведут к удалению анкеты и блокировке аккаунта",
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(CreateProfileStates.photo)
@@ -127,13 +121,8 @@ async def profile_photo(message: Message, state: FSMContext, bot: Bot):
             reply_markup=ReplyKeyboardRemove(),
         )
     else:
-        photo_size = message.photo[-1]
-        dest_path = UPLOAD_DIR / (str(message.from_user.id) + ".jpg")
-        
-        await bot.download(
-            photo_size,
-            destination=dest_path
-        )
+        file_id = message.photo[-1].file_id
+
         data = await state.get_data()
         profile = ProfileCreateInternalSchema(
             tg_id=message.from_user.id,
@@ -142,15 +131,14 @@ async def profile_photo(message: Message, state: FSMContext, bot: Bot):
             sex=data["sex"],
             uni=data["uni"],
             description=data["description"],
-            s3_path=str(dest_path),
+            s3_path=file_id,
         )
 
         await ServiceDB.add_profile(profile)
 
-        profile_image = FSInputFile(str(dest_path))
 
         await message.answer_photo(
-            photo=profile_image,
+            photo=file_id,
             caption=f"Анкета создана.\n{profile.name}, {profile.age} лет, {profile.uni}\n{profile.description}",
             reply_markup=main_menu_keyboard(),
             parse_mode="Markdown",
