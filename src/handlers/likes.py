@@ -115,6 +115,7 @@ async def process_accept_pending_like(callback_query: CallbackQuery, state: FSMC
     liker_tg_id_str = callback_query.data.split(":")[1]
     liker_tg_id = int(liker_tg_id_str)
     current_user_tg_id = callback_query.from_user.id
+    profile_data: Optional[ProfileSchema] = await ServiceDB.get_profile_by_tgid(current_user_tg_id)
 
     await ServiceDB.accept_like(liker_tg_id, current_user_tg_id)
 
@@ -122,6 +123,31 @@ async def process_accept_pending_like(callback_query: CallbackQuery, state: FSMC
         await callback_query.message.edit_reply_markup(reply_markup=None)
     except TelegramBadRequest:
         pass
+
+    if profile_data:
+            try:
+                file_id = profile_data.s3_path
+                telegram_user_info = await get_telegram_username_or_name(bot, current_user_tg_id)
+                
+                await bot.send_photo(
+                    chat_id=liker_tg_id,
+                    photo=file_id,
+                    caption=(
+                        f"Взаимная симпатия с: {profile_data.name}, {profile_data.age}\n"
+                        f"Город: {profile_data.uni}\n"
+                        f"О себе: {profile_data.description}\n\n"
+                        f"Связь: {telegram_user_info}"
+                    )
+                )
+            except FileNotFoundError:
+                await callback_query.message.answer(f"Не удалось загрузить фото для профиля {profile_data.name} (ID: {current_user_tg_id}). Telegram: {await get_telegram_username_or_name(bot, current_user_tg_id)}")
+            except Exception as e:
+                await callback_query.message.answer(f"Произошла ошибка при показе профиля {profile_data.name} (ID: {current_user_tg_id}). Telegram: {await get_telegram_username_or_name(bot, current_user_tg_id)}. Ошибка: {e}")
+                print(f"Error sending mutual like profile: {e}")
+    else:
+            await callback_query.message.answer(f"Не удалось найти профиль для пользователя с ID {current_user_tg_id}. Telegram: {await get_telegram_username_or_name(bot, current_user_tg_id)}")
+
+    
 
     data = await state.get_data()
     current_index = data.get("current_pending_index", 0)
@@ -179,7 +205,7 @@ async def process_view_my_mutual_likes(callback_query: CallbackQuery, state: FSM
     await callback_query.message.edit_text("Ваши взаимные симпатии:")
     
     for like_info in accepted_likes_i_gave:
-        mutual_profile_tg_id = like_info.liked_tgid 
+        mutual_profile_tg_id = like_info.liked_tgid if user_tg_id != like_info.liked_tgid else like_info.liker_tgid
         profile_data: Optional[ProfileSchema] = await ServiceDB.get_profile_by_tgid(mutual_profile_tg_id)
 
         if profile_data:

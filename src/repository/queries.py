@@ -1,4 +1,4 @@
-from sqlalchemy import func, text, select, update, union, delete, exists
+from sqlalchemy import func, text, select, update, union, delete, exists, or_
 from sqlalchemy.exc import IntegrityError
 
 from src.repository.database import engine, Base, session_maker
@@ -301,7 +301,7 @@ class LikeORM:
     async def get_all_accepted_likes_by_liker_tgid(tg_id: int):
         async with session_maker() as session:
             stmt = select(Like).where(
-                Like.liker_tgid == tg_id,
+                or_(Like.liker_tgid == tg_id, Like.liked_tgid == tg_id),
                 Like.is_accepted == True
             )
             result = await session.execute(stmt)
