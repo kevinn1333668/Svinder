@@ -95,7 +95,7 @@ async def profile_sex(message: Message, state: FSMContext):
 
 @profile_router.message(CreateProfileStates.university)
 async def profile_university(message: Message, state: FSMContext):
-    await state.update_data(uni=message.text.upper())
+    await state.update_data(uni=message.text)
     await message.answer(
         "Напиши о себе: хобби, интересы и увлечения на сервере (реальные данные по желанию)",
         reply_markup=ReplyKeyboardRemove(),
