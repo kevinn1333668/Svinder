@@ -87,7 +87,7 @@ async def profile_sex(message: Message, state: FSMContext):
         else:
             await state.update_data(sex='Мальчик')
         await message.answer(
-            "Записал. Теперь скажи свой город",
+            "Записал. Теперь скажи свой город на сервере",
             reply_markup=ReplyKeyboardRemove(),
         )
         await state.set_state(CreateProfileStates.university)

@@ -10,6 +10,13 @@ _Нажми *"Начать"*, чтобы создать свою анкету и
 
 WELCOME_IMAGE = FSInputFile("src/static/bot/image.png")
 
+COMPLAINS : dict[str, str] = {
+    'sex': 'Пол',
+    'photo': 'Фото',
+    'imposter': 'Выдача себя за другого человека',
+    'other': 'Другое',
+}
+
 text_main_menu = """
 ┏━━━━━━ * SVINDER * ━━━━━━┓
   Вы можете:

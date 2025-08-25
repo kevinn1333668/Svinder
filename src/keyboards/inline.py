@@ -47,8 +47,12 @@ def pending_like_action_keyboard(liker_tg_id: int) -> InlineKeyboardMarkup:
 def confirm_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Да", callback_data="complain_confirm")],
-            [InlineKeyboardButton(text="Нет", callback_data="complain_cancel")]
+            [InlineKeyboardButton(text="Пол", callback_data="complain_sex")],
+            [InlineKeyboardButton(text="Фотография", callback_data="complain_photo")],
+            [InlineKeyboardButton(text="Описание", callback_data="complain_about")],
+            [InlineKeyboardButton(text="Выдача себя за другого человека", callback_data="complain_imposter")],
+            [InlineKeyboardButton(text="Другое", callback_data="complain_other")],
+            [InlineKeyboardButton(text="Назад", callback_data="complain_cancel")]
         ]
     )
 

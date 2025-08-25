@@ -8,7 +8,7 @@ from src.service.db_service import ServiceDB
 from src.keyboards.reply import main_menu_keyboard
 from src.keyboards.inline import profile_action_keyboard, confirm_keyboard, moderation_keyboard
 from src.states import SearchProfileStates, UserRoadmap
-from src.static.text.texts import text_search_profiles
+from src.static.text.texts import text_search_profiles, COMPLAINS
 from src.service.schemas import LikeSchema, ProfileSchema
 from typing import List, Optional
 from src.handlers.likes import get_telegram_username_or_name
@@ -24,14 +24,34 @@ search_router = Router()
 # f"\nTelegram: {telegram_info}"
 
 
-async def send_next_profile(target_message: Message, curr_user_tgid: int, state: FSMContext, bot: Bot):
-    profile = await ServiceDB.search_profile(curr_user_tgid)
 
-    if profile:
+async def send_next_profile(
+    target_message: Message,
+    curr_user_tgid: int,
+    state: FSMContext,
+    bot: Bot,
+    max_attempts: int = 5,   # защита от бесконечных попыток
+):
+    attempts = 0
+
+    while attempts < max_attempts:
+        profile = await ServiceDB.search_profile(curr_user_tgid)
+
+        if not profile:
+            await target_message.answer(
+                "Других профилей не найдено 😭",
+                reply_markup=main_menu_keyboard()
+            )
+            await state.set_state(UserRoadmap.main_menu)
+            return
+
         try:
             file_id = profile.s3_path
 
-            await state.update_data(current_viewing_tg_id=profile.tg_id, profile_image=file_id)
+            await state.update_data(
+                current_viewing_tg_id=profile.tg_id,
+                profile_image=file_id
+            )
 
             await target_message.answer_photo(
                 photo=file_id,
@@ -41,24 +61,24 @@ async def send_next_profile(target_message: Message, curr_user_tgid: int, state:
                 ),
                 reply_markup=profile_action_keyboard()
             )
-            
+
             await state.set_state(SearchProfileStates.viewing_profile)
+            return  # успешный показ, выходим
 
-        except FileNotFoundError:
-             await target_message.answer(f"Ошибка: Файл фото не найден по пути {profile.s3_path}. Пробуем найти следующую анкету.")
-             await send_next_profile(target_message, curr_user_tgid, state, bot) 
         except Exception as e:
-             await target_message.answer(f"Произошла ошибка при показе фото: {e}. Пробуем найти следующую анкету.")
-             print(f"Error sending photo: {e}")
-             await send_next_profile(target_message, curr_user_tgid, state, bot)
+            print(f"Ошибка при показе профиля {profile.tg_id}: {e}")
+            await target_message.answer(
+                f"Не удалось показать фото профиля. Пробуем следующий..."
+            )
+            attempts += 1
 
+    # если все попытки неудачны
+    await target_message.answer(
+        "К сожалению, не удалось загрузить анкеты. Попробуйте позже 🙏",
+        reply_markup=main_menu_keyboard()
+    )
+    await state.set_state(UserRoadmap.main_menu)
 
-    else:
-        await target_message.answer(
-            "Других профилей не найдено 😭",
-            reply_markup=main_menu_keyboard()
-        )
-        await state.set_state(UserRoadmap.main_menu)
 
 
 @search_router.message(F.text == text_search_profiles)
@@ -159,7 +179,7 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
 
         try:
             await callback_query.message.edit_caption(
-                caption="Вы уверены?",
+                caption="Вам больше не попадется данная анкета.\n Выберите причину жалобы",
                 reply_markup=confirm_keyboard()
             )
             return
@@ -183,7 +203,7 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
          print(f"Не удалось убрать клавиатуру из сообщения: {e}")
 
 
-@search_router.callback_query(F.data.in_(["complain_confirm", "complain_cancel"]))
+@search_router.callback_query(F.data.startswith('complain'))
 async def handle_complain_confirmation(callback_query: CallbackQuery, state: FSMContext, bot: Bot):
     await callback_query.answer()
 
@@ -194,26 +214,7 @@ async def handle_complain_confirmation(callback_query: CallbackQuery, state: FSM
     previous_message_text = state_data.get("previous_message_text", "")
     previous_keyboard = state_data.get("previous_keyboard", None)
 
-    if action == "complain_confirm":
-        user_tg_id = callback_query.from_user.id
-        
-        await ServiceDB.report_profile(user_id=user_tg_id, target_id=viewed_tg_id)
-
-        await bot.send_photo(
-            chat_id=settings.ADMIN_CHAT_ID,
-            photo=profile_photo,
-            caption=previous_message_text,
-            reply_markup=moderation_keyboard(viewed_tg_id)
-        )
-
-        await callback_query.message.answer("👍")
-        print(f"Пользователь {user_tg_id} пожаловался на {viewed_tg_id}")
-
-
-
-        await send_next_profile(callback_query.message, user_tg_id, state, bot)
-
-    elif action == "complain_cancel":
+    if action == "complain_cancel":
         try:
             await callback_query.message.edit_caption(
                 caption=previous_message_text,
@@ -227,4 +228,24 @@ async def handle_complain_confirmation(callback_query: CallbackQuery, state: FSM
             previous_message_text=None,
             previous_keyboard=None
         )
+
+    elif action.startswith('complain'):
+        user_tg_id = callback_query.from_user.id
+        
+        await ServiceDB.report_profile(user_id=user_tg_id, target_id=viewed_tg_id)
+
+        await bot.send_photo(
+            chat_id=settings.ADMIN_CHAT_ID,
+            photo=profile_photo,
+            caption=f'{previous_message_text}\nПричина: {COMPLAINS[action.split('_')[1]]}',
+            reply_markup=moderation_keyboard(viewed_tg_id)
+        )
+
+        await callback_query.message.answer("👍")
+        print(f"Пользователь {user_tg_id} пожаловался на {viewed_tg_id}")
+
+
+
+        await send_next_profile(callback_query.message, user_tg_id, state, bot)
+
 

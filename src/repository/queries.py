@@ -6,6 +6,7 @@ from src.repository.models import User, Profile, Like, Complain, Ban, Dislike # 
 from src.service.schemas import ProfileCreateInternalSchema
 
 from datetime import datetime, timedelta
+import random
 
 
 class AsyncORM:
@@ -136,31 +137,50 @@ class ProfileORM:
         async with session_maker() as session:
 
             user_profile = await ProfileORM.get_profile_by_tgid(curr_user_tgid)
-
             if user_profile is None:
                 return None
 
-            excluded_tgids = union(
-                select(Like.liked_tgid).where(Like.liker_tgid == curr_user_tgid),
-                select(Complain.profile_tg_id).where(Complain.user_tg_id == curr_user_tgid),
-                select(Dislike.profile_id).where((Dislike.user_id == curr_user_tgid) & (Dislike.until > datetime.now()))
-            ).subquery()
+            # Подзапрос на исключения
+            excluded = (
+                select(Like.liked_tgid)
+                .where(Like.liker_tgid == curr_user_tgid)
+                .union_all(
+                    select(Complain.profile_tg_id).where(Complain.user_tg_id == curr_user_tgid),
+                    select(Dislike.profile_id).where(
+                        (Dislike.user_id == curr_user_tgid) & (Dislike.until > datetime.now())
+                    )
+                )
+                .subquery()
+            )
 
-
-
-            stmt = select(Profile).where(
+            # Считаем количество подходящих профилей
+            count_stmt = select(func.count()).select_from(Profile).where(
                 Profile.tg_id != curr_user_tgid,
                 Profile.sex != user_profile.sex,
-                Profile.tg_id.notin_(select(excluded_tgids))
-            ).order_by(
-                func.random()
-            ).limit(1)
+                ~exists(select(excluded.c.liked_tgid).where(excluded.c.liked_tgid == Profile.tg_id))
+            )
+
+            total = (await session.execute(count_stmt)).scalar()
+            if not total or total == 0:
+                print("DEBUG: search_profile не нашел других профилей.")
+                return None
+
+            # Случайный offset
+            offset = random.randint(0, total - 1)
+
+            stmt = (
+                select(Profile)
+                .where(
+                    Profile.tg_id != curr_user_tgid,
+                    Profile.sex != user_profile.sex,
+                    ~exists(select(excluded.c.liked_tgid).where(excluded.c.liked_tgid == Profile.tg_id))
+                )
+                .offset(offset)
+                .limit(1)
+            )
 
             result = await session.execute(stmt)
-
             random_profile = result.scalar_one_or_none()
-
-            print("I SEE", random_profile)
 
             if random_profile is None:
                 print("DEBUG: search_profile не нашел других профилей.")
@@ -168,7 +188,7 @@ class ProfileORM:
                 print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
 
             return random_profile
-        
+            
     @staticmethod
     async def delete_profile_by_tg_id(tg_id: int):
         async with session_maker() as session:
