@@ -30,12 +30,15 @@ async def send_next_profile(
     curr_user_tgid: int,
     state: FSMContext,
     bot: Bot,
+    sex_filter: bool = True,
     max_attempts: int = 5,   # защита от бесконечных попыток
 ):
     attempts = 0
 
+
+
     while attempts < max_attempts:
-        profile = await ServiceDB.search_profile(curr_user_tgid)
+        profile = await ServiceDB.search_profile(curr_user_tgid, sex_filter)
 
         if not profile:
             await target_message.answer(
@@ -57,6 +60,7 @@ async def send_next_profile(
                 photo=file_id,
                 caption=(
                     f"{profile.name}, {profile.age} лет, {profile.uni}\n"
+                    f"{profile.sex.value}\n"
                     f"{profile.description}"
                 ),
                 reply_markup=profile_action_keyboard()
@@ -83,13 +87,15 @@ async def send_next_profile(
 
 @search_router.message(F.text == text_search_profiles)
 async def initiate_profile_search_handler(message: Message, state: FSMContext, bot: Bot): # Нужен bot: Bot
-     await state.clear() 
-     user_profile = await ServiceDB.get_profile_by_tgid(message.from_user.id)
-     if user_profile is None:
-         await message.answer("Чтобы начать поиск, сначала создайте анкету (/start).")
-         return
-     await message.answer("Начинаем поиск анкет...", reply_markup=ReplyKeyboardRemove())
-     await send_next_profile(message, message.from_user.id, state, bot)
+    await state.clear() 
+    user_profile = await ServiceDB.get_profile_by_tgid(message.from_user.id)
+    if user_profile is None:
+        await message.answer("Чтобы начать поиск, сначала создайте анкету (/start).")
+        return
+        
+    await state.update_data(sex_filter=user_profile.sex_filter)
+    await message.answer("Начинаем поиск анкет...", reply_markup=ReplyKeyboardRemove())
+    await send_next_profile(message, message.from_user.id, state, bot, user_profile.sex_filter)
 
 
 @search_router.callback_query(SearchProfileStates.viewing_profile, F.data.in_(["like", "next", "main_menu", "complain"]))
@@ -100,6 +106,7 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
     user_tg_id = callback_query.from_user.id
     state_data = await state.get_data()
     viewed_tg_id = state_data.get("current_viewing_tg_id")
+    sex_filter = state_data.get("sex_filter")
 
     print(f"DEBUG: handle_profile_action вызван пользователем TG ID: {user_tg_id}")
     print(f"DEBUG: Из FSM состояния получен viewed_tg_id: {viewed_tg_id}")
@@ -162,14 +169,16 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
                     print(f"Error sending mutual like profile: {e}")
             else:
                 await callback_query.message.answer(f"Не удалось найти профиль для пользователя с ID {viewed_tg_id}. Telegram: {await get_telegram_username_or_name(bot, viewed_tg_id)}")
-        await send_next_profile(callback_query.message, user_tg_id, state, bot)
+            
+
+        await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter=sex_filter)
 
     elif action == "next":
         print(f"Пропускаем профиль: {user_tg_id} -> {viewed_tg_id}")
 
         await ServiceDB.create_dislike(user_id=user_tg_id, target_id=viewed_tg_id)
 
-        await send_next_profile(callback_query.message, user_tg_id, state, bot)
+        await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter)
 
     elif action == 'complain':
         await state.update_data(
@@ -213,6 +222,7 @@ async def handle_complain_confirmation(callback_query: CallbackQuery, state: FSM
     profile_photo = state_data.get("profile_image")
     previous_message_text = state_data.get("previous_message_text", "")
     previous_keyboard = state_data.get("previous_keyboard", None)
+    sex_filter = state_data.get('sex_filter')
 
     if action == "complain_cancel":
         try:
@@ -246,6 +256,6 @@ async def handle_complain_confirmation(callback_query: CallbackQuery, state: FSM
 
 
 
-        await send_next_profile(callback_query.message, user_tg_id, state, bot)
+        await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter=sex_filter)
 
 

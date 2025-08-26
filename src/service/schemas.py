@@ -28,6 +28,7 @@ class ProfileSchema(BaseModel):
 
     is_active: Annotated[bool, Field(default=True)]
     s3_path: Annotated[str | None, Field()]
+    sex_filter: Annotated[bool, Field()]
 
     created_at: Annotated[datetime, Field()]
     modified_at: Annotated[datetime, Field()]
@@ -45,6 +46,7 @@ class ProfileCreateInternalSchema(BaseModel):
     description: Annotated[str, Field(max_length=1024)]
 
     s3_path: Annotated[str | None, Field()]
+    sex_filter: Annotated[bool, Field()]
 
 
 class LikeSchema(BaseModel):

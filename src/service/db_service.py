@@ -4,6 +4,7 @@ from random import randint
 from src.config import settings
 from src.repository.queries import AsyncORM, UserORM, ProfileORM, LikeORM, ComplaintORM, BanORM, DislikeORM
 from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema, LikeSchema, BanSchema
+from src.repository.models import Profile
 
 from typing import List, Optional
 
@@ -11,7 +12,8 @@ from typing import List, Optional
 class ServiceDB:
 
     
-    
+
+        
 
     @staticmethod
     async def is_user_exist_by_tgid(tg_id: int) -> bool:
@@ -70,8 +72,9 @@ class ServiceDB:
         await ProfileORM.update_profile(profile_to_update)
 
     @staticmethod
-    async def search_profile(curr_user_tgid: int) -> ProfileSchema:
-        profile = await ProfileORM.get_random_profile_except_tgid(curr_user_tgid)
+    async def search_profile(curr_user_tgid: int, sex_filter: bool = True) -> ProfileSchema:
+        profile = await ProfileORM.get_random_profile(curr_user_tgid, sex_filter)
+            
         return ProfileSchema.model_validate(profile) if profile else None
     
     @staticmethod
@@ -83,6 +86,10 @@ class ServiceDB:
     async def get_profile_by_tgid(tgid: int) -> ProfileSchema | None:
         profile = await ProfileORM.get_profile_by_tgid(tgid)
         return ProfileSchema.model_validate(profile) if profile else None
+    
+    @staticmethod
+    async def change_gender_filter(tg_id: int) -> tuple[bool, bool] | bool:       
+        return await ProfileORM.change_gender_filter_by_tg_id(tg_id=tg_id)
     
     
     @staticmethod

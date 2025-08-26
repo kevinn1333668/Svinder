@@ -132,6 +132,7 @@ async def profile_photo(message: Message, state: FSMContext, bot: Bot):
             uni=data["uni"],
             description=data["description"],
             s3_path=file_id,
+            sex_filter=True,
         )
 
         await ServiceDB.add_profile(profile)

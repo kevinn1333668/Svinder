@@ -25,7 +25,7 @@ from src.static.text.texts import (
     text_no, text_yes,
     text_profile_create_begin,
     text_search_profiles_start,
-    text_delete_profile,
+    text_delete_profile, text_filter_sex,
 )
 
 
@@ -42,9 +42,20 @@ async def get_my_profile(message: Message):
             photo=profile_image,
             caption=(
                 f"{profile.name}, {profile.age} лет, {profile.uni}\n"
+                f"{profile.sex.value}\n"
                 f"{profile.description}"
             )
         )
+    
+@user_router.message(F.text == text_filter_sex)
+async def toggle_gender_filter(message: Message):
+    result = await ServiceDB.change_gender_filter(message.from_user.id)
+
+    if result:
+        await message.answer(f'Фильтрация теперь {'включена ✅' if result[1] else 'выключена ❌'}')
+    else:
+        await message.answer("Произошла ошибка при смене режима фильрации")
+
     
 @user_router.message(F.text == text_delete_profile)
 async def delete_my_profile(message: Message):

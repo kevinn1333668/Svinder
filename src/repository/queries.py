@@ -104,7 +104,8 @@ class ProfileORM:
                 sex=profile_data.sex,
                 uni=profile_data.uni,
                 description=profile_data.description,
-                s3_path=profile_data.s3_path
+                s3_path=profile_data.s3_path,
+                sex_filter=True,
             )
 
             session.add(new_profile)
@@ -125,6 +126,7 @@ class ProfileORM:
                 existing_profile.uni = profile_data.uni
                 existing_profile.description = profile_data.description
                 existing_profile.s3_path = profile_data.s3_path
+                existing_profile.sex_filter = profile_data.sex_filter
 
                 await session.commit()
                 await session.refresh(existing_profile) 
@@ -133,7 +135,7 @@ class ProfileORM:
                 return False
     
     @staticmethod
-    async def get_random_profile_except_tgid(curr_user_tgid: int) -> Profile | None:
+    async def get_random_profile(curr_user_tgid: int, sex_filter: bool = True) -> Profile | None:
         async with session_maker() as session:
 
             user_profile = await ProfileORM.get_profile_by_tgid(curr_user_tgid)
@@ -153,14 +155,20 @@ class ProfileORM:
                 .subquery()
             )
 
-            # Считаем количество подходящих профилей
-            count_stmt = select(func.count()).select_from(Profile).where(
+                    # Формируем условия WHERE
+            conditions = [
                 Profile.tg_id != curr_user_tgid,
-                Profile.sex != user_profile.sex,
                 ~exists(select(excluded.c.liked_tgid).where(excluded.c.liked_tgid == Profile.tg_id))
-            )
+            ]
 
+            # Добавляем фильтр по полу только если sex_filter = True
+            if sex_filter:
+                conditions.append(Profile.sex != user_profile.sex)
+
+            # Считаем количество подходящих профилей
+            count_stmt = select(func.count()).select_from(Profile).where(*conditions)
             total = (await session.execute(count_stmt)).scalar()
+
             if not total or total == 0:
                 print("DEBUG: search_profile не нашел других профилей.")
                 return None
@@ -170,11 +178,7 @@ class ProfileORM:
 
             stmt = (
                 select(Profile)
-                .where(
-                    Profile.tg_id != curr_user_tgid,
-                    Profile.sex != user_profile.sex,
-                    ~exists(select(excluded.c.liked_tgid).where(excluded.c.liked_tgid == Profile.tg_id))
-                )
+                .where(*conditions)
                 .offset(offset)
                 .limit(1)
             )
@@ -188,6 +192,9 @@ class ProfileORM:
                 print(f"DEBUG: search_profile({curr_user_tgid}) нашел профиль TG ID: {random_profile.tg_id}")
 
             return random_profile
+        
+
+
             
     @staticmethod
     async def delete_profile_by_tg_id(tg_id: int):
@@ -241,6 +248,24 @@ class ProfileORM:
 
             return True
                
+
+
+    @staticmethod
+    async def change_gender_filter_by_tg_id(tg_id: int) -> tuple[bool, bool] | bool:
+        async with session_maker() as session:
+            profile = await session.execute(select(Profile).where(Profile.tg_id == tg_id))
+            profile = profile.scalar_one_or_none()
+            
+            if profile is None:
+                return False
+            
+
+            new_value = not profile.sex_filter
+            profile.sex_filter = new_value
+            await session.commit()
+            
+            print(f"Фильтр изменён: {new_value}")
+            return (True, new_value)
 
 class LikeORM:
     @staticmethod

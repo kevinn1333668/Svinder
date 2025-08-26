@@ -45,7 +45,8 @@ async def edit_profile_start(message: Message, state: FSMContext, bot: Bot):
         original_sex=current_profile.sex.value,
         original_uni=current_profile.uni,
         original_description=current_profile.description,
-        original_s3_path=current_profile.s3_path
+        original_s3_path=current_profile.s3_path,
+        original_filter_sex=current_profile.sex_filter,
     )
     
     await message.answer(
@@ -190,6 +191,7 @@ async def edit_profile_photo(message: Message, state: FSMContext, bot: Bot):
         uni=updated_data["uni"],
         description=updated_data["description"],
         s3_path=updated_data["s3_path"],
+        sex_filter=updated_data['original_filter_sex']
     )
 
     try:

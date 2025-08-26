@@ -57,6 +57,7 @@ class Profile(Base):
     )
 
     s3_path: Mapped[Str1024] = mapped_column(nullable=False, unique=True)
+    sex_filter: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     created_at: Mapped[created_at_type]
     modified_at: Mapped[modified_at_type]
