@@ -13,9 +13,10 @@ _Нажми *"Начать"*, чтобы создать свою анкету и
 WELCOME_IMAGE = FSInputFile("src/static/bot/image.png")
 
 COMPLAINS : dict[str, str] = {
-    'sex': 'Пол',
     'photo': 'Фото',
     'imposter': 'Выдача себя за другого человека',
+    'about': 'Описание',
+    'all': 'Неприемлимая анкета',
     'other': 'Другое',
 }
 
