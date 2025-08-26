@@ -128,7 +128,7 @@ async def cmd_ban(message: Message, command: CommandObject):
 
         await message.answer(f"✅ Пользователь @{username} забанен. ID бана - {ban_id}")
         try:
-            await message.bot.send_message(user.tg_id, f"❌ Вы были забанены по решению администрации. ID бана - {ban_id}")
+            await message.bot.send_message(user.tg_id, f"❌ Вы были забанены по решению администрации. ID бана - {ban_id}\n По всем вопросам обращаться в @SvinderSupportBot")
         except Exception as e:
             print(f"Ошибка при отправке: {e}")
     else:
