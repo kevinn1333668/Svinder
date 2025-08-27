@@ -42,7 +42,7 @@ async def send_next_profile(
 
         if not profile:
             await target_message.answer(
-                "Других профилей не найдено 😭",
+                "Других профилей не найдено 😭\nПри дизлайке профиль скрывается на 10 минут",
                 reply_markup=main_menu_keyboard()
             )
             await state.set_state(UserRoadmap.main_menu)

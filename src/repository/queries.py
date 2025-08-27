@@ -149,7 +149,7 @@ class ProfileORM:
                 .union_all(
                     select(Complain.profile_tg_id).where(Complain.user_tg_id == curr_user_tgid),
                     select(Dislike.profile_id).where(
-                        (Dislike.user_id == curr_user_tgid) & (Dislike.until > datetime.now())
+                        (Dislike.user_id == curr_user_tgid) & (Dislike.until > func.now())
                     )
                 )
                 .subquery()
@@ -510,7 +510,7 @@ class DislikeORM:
 
                 existing = result.scalar_one_or_none()
 
-                new_until = datetime.now() + timedelta(minutes=1)
+                new_until = datetime.now() + timedelta(minutes=5)
 
                 if existing:
                     existing.until = new_until

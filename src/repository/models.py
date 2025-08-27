@@ -109,7 +109,7 @@ class Dislike(Base):
     profile_id: Mapped[TgID] = mapped_column(ForeignKey("users.tg_id", ondelete="CASCADE"), nullable=False)
     until: Mapped[DateTime] = mapped_column(
         DateTime,
-        server_default=text("TIMEZONE('utc', NOW()) + INTERVAL '1 day'")
+        server_default=text("TIMEZONE('utc', NOW()) + INTERVAL '5 minutes'")
     )
 
     __table_args__ = (
