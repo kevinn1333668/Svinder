@@ -147,10 +147,18 @@ class ProfileORM:
                 select(Like.liked_tgid)
                 .where(Like.liker_tgid == curr_user_tgid)
                 .union_all(
+                    # Кого я лайкнул (уже не показываем)
+                    select(Like.liked_tgid).where(Like.liker_tgid == curr_user_tgid),
+                    # На кого я пожаловался
                     select(Complain.profile_tg_id).where(Complain.user_tg_id == curr_user_tgid),
+                    # Кого я дизлайкнул (временно)
                     select(Dislike.profile_id).where(
                         (Dislike.user_id == curr_user_tgid) & (Dislike.until > func.now())
-                    )
+                    ),
+                    # Кто лайкнул меня и я принял — он мне больше не нужен
+                    select(Like.liker_tgid).where(
+                        (Like.liked_tgid == curr_user_tgid) & (Like.is_accepted == True)
+                    ),
                 )
                 .subquery()
             )
