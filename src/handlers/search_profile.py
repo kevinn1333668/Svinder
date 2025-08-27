@@ -169,7 +169,12 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
                     print(f"Error sending mutual like profile: {e}")
             else:
                 await callback_query.message.answer(f"Не удалось найти профиль для пользователя с ID {viewed_tg_id}. Telegram: {await get_telegram_username_or_name(bot, viewed_tg_id)}")
-            
+
+        else:
+            await bot.send_message(
+                chat_id=viewed_tg_id,
+                text='Вас лайкнули! ❤️\nПосмотрите, кто это был 👀'
+            )        
 
         await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter=sex_filter)
 
