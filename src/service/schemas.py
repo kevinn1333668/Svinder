@@ -21,7 +21,7 @@ class ProfileSchema(BaseModel):
     tg_id: Annotated[int, Field()]
 
     name: Annotated[str, Field(min_length=1, max_length=100)]
-    age: Annotated[int, Field(ge=16, le=80)]
+    age: Annotated[int, Field(ge=14, le=80)]
     sex: Annotated[SexEnum, Field()]
     uni: Annotated[str, Field(min_length=2, max_length=100)]
     description: Annotated[str, Field(max_length=1024)]
@@ -40,7 +40,7 @@ class ProfileCreateInternalSchema(BaseModel):
     tg_id: int
 
     name: Annotated[str, Field(min_length=1, max_length=100)]
-    age: Annotated[int, Field(ge=16, le=80)]
+    age: Annotated[int, Field(ge=14, le=80)]
     sex: Annotated[SexEnum, Field()]
     uni: Annotated[str, Field(min_length=2, max_length=100)]
     description: Annotated[str, Field(max_length=1024)]
