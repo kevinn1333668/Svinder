@@ -61,7 +61,7 @@ async def handle_ban(callback_query: CallbackQuery, bot: Bot):
 
 
 
-    user_tg_id = int(callback_query.data.split("_")[1])
+
     await ServiceDB.ban_profile(tg_id=user_tg_id)
 
     ban = await ServiceDB.get_ban_by_tg_id_ORM(tg_id=user_tg_id)
@@ -78,7 +78,7 @@ async def handle_ban(callback_query: CallbackQuery, bot: Bot):
     try:
         await bot.send_message(
         chat_id=user_tg_id,
-        text=f"Вы забаненны по решению администрации. ID бана {ban.ban_id}"
+        text=f"Вы забаненны по решению администрации. ID бана {ban.ban_id}\n По всем вопросам - @SvinderSupportBot"
     )
     
     except Exception as e:

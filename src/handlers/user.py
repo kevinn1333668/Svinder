@@ -67,7 +67,7 @@ async def delete_my_profile(message: Message):
         await message.answer(text="Анкета успешно удалена! Нажмите '/start' для перезапуска.")
 
     except Exception as e:
-        message.answer(text="Ошибка при удалении профиля!")
+        await message.answer(text="Ошибка при удалении профиля!")
 
 @user_router.message(F.text == text_edit_profile)
 async def user_start_edit_profile(message: Message, state: FSMContext):
