@@ -510,7 +510,7 @@ class DislikeORM:
 
                 existing = result.scalar_one_or_none()
 
-                new_until = datetime.now() + timedelta(minutes=5)
+                new_until = datetime.now() + timedelta(minutes=10)
 
                 if existing:
                     existing.until = new_until

@@ -86,7 +86,7 @@ async def edit_profile_age(message: Message, state: FSMContext):
     elif not message.text or not message.text.isdigit():
         await message.answer("Это точно число? Попробуй еще раз или оставь как есть.", reply_markup=skip_keyboard())
         return
-    elif int(message.text) < 16 or int(message.text) > 60:
+    elif int(message.text) < 14 or int(message.text) > 60:
         await message.answer("Странный возраст... Подумай еще или оставь как есть.", reply_markup=skip_keyboard())
         return
     else:

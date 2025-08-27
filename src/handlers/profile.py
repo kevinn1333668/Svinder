@@ -60,7 +60,7 @@ async def profile_age(message: Message, state: FSMContext):
             "Странный возраст... Это точно число, не могу понять? Давай еще раз",
             reply_markup=ReplyKeyboardRemove()
         )
-    elif int(message.text) < 16 or int(message.text) > 60:
+    elif int(message.text) < 14 or int(message.text) > 60:
         await message.answer(
             "Странный возраст... Подумай еще",
             reply_markup=ReplyKeyboardRemove()
