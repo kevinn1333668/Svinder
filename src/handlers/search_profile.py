@@ -12,6 +12,7 @@ from src.static.text.texts import text_search_profiles, COMPLAINS
 from src.service.schemas import LikeSchema, ProfileSchema
 from typing import List, Optional
 from src.handlers.likes import get_telegram_username_or_name
+from src.repository.types import SexFilterState
 
 from src.config import settings
 
@@ -30,11 +31,10 @@ async def send_next_profile(
     curr_user_tgid: int,
     state: FSMContext,
     bot: Bot,
-    sex_filter: bool = True,
-    max_attempts: int = 5,   # защита от бесконечных попыток
+    sex_filter: SexFilterState,
+    max_attempts: int = 1,   # защита от бесконечных попыток
 ):
     attempts = 0
-
 
 
     while attempts < max_attempts:
@@ -42,7 +42,7 @@ async def send_next_profile(
 
         if not profile:
             await target_message.answer(
-                "Других профилей не найдено 😭\nПри дизлайке профиль скрывается на 10 минут",
+                "Других профилей не найдено 😭\nПри дизлайке профиль скрывается на 20 минут",
                 reply_markup=main_menu_keyboard()
             )
             await state.set_state(UserRoadmap.main_menu)
@@ -74,9 +74,18 @@ async def send_next_profile(
             await target_message.answer(
                 f"Не удалось показать фото профиля. Пробуем следующий..."
             )
+
+            await ServiceDB.delete_profile(profile.tg_id)
+            await bot.send_message(
+                chat_id=profile.tg_id,
+                text='Ваша анкета была потеряна из-за технического сбоя. Пожалуйста, заполните её заново.'
+                )
+
             attempts += 1
 
     # если все попытки неудачны
+
+
     await target_message.answer(
         "К сожалению, не удалось загрузить анкеты. Попробуйте позже 🙏",
         reply_markup=main_menu_keyboard()
@@ -193,7 +202,7 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
 
         try:
             await callback_query.message.edit_caption(
-                caption="Вам больше не попадется данная анкета.\n Выберите причину жалобы",
+                caption="Данная анкета будет добавлена в черный список 🛡️.\n Выберите причину жалобы",
                 reply_markup=confirm_keyboard()
             )
             return

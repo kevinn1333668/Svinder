@@ -10,10 +10,14 @@ from src.keyboards.inline import moderation_keyboard
 from src.states import SearchProfileStates, UserRoadmap
 from src.static.text.texts import text_search_profiles
 from src.handlers.likes import get_telegram_username_or_name
+from src.states import AdminStates
 
 from src.config import settings
+import asyncio
 
 admin_router = Router()
+
+broadcast_mode = False
 
 @admin_router.callback_query(F.data.startswith("approve_"))
 async def handle_approve(callback_query: CallbackQuery, bot: Bot):
@@ -166,3 +170,46 @@ async def cmd_unban(message: Message, command: CommandObject):
                 print(f"Ошибка при отправке: {e}")
     else:
         await message.answer("❌ Ошибка при разбане.")
+
+
+@admin_router.message(Command('broadcast'))
+async def start_broadcast(message: Message, state: FSMContext):
+    # Проверка: только админы
+    if message.from_user.id not in settings.ADMINS_IDS:
+        return  # Или можно отправить "нет прав", если нужно
+
+    # Устанавливаем состояние
+    await state.set_state(AdminStates.waiting_broadcast)
+    await message.answer("📢 Отправь мне сообщение, которое нужно разослать всем пользователям.")
+
+@admin_router.message(AdminStates.waiting_broadcast, F.from_user.id.in_(settings.ADMINS_IDS))
+async def handle_broadcast(message: Message, bot: Bot, state: FSMContext):
+    
+    
+    await state.clear()
+    
+    tg_ids = await ServiceDB.get_all_users()
+
+    await message.answer(f"Начинаю рассылку ({len(tg_ids)} пользователям)")
+
+    for tg_id in tg_ids:
+        try:
+            if message.text:
+                await bot.send_message(
+                    chat_id=tg_id,
+                    text=message.text
+                )
+
+            else:
+                await bot.copy_message(
+                    chat_id=tg_id,
+                    from_chat_id=message.chat.id,
+                    message_id=message.message_id,
+                    caption=message.caption or ''
+                )
+            await asyncio.sleep(0.05) 
+
+        except Exception as e:
+            print(f'Ошибка {tg_id}: {e}')
+
+    await message.answer('✅ Рассылка завершена!')

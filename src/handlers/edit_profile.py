@@ -11,6 +11,7 @@ from src.service.schemas import ProfileCreateInternalSchema
 from src.static.text.texts import text_male, text_female
 
 
+
 edit_router = Router()
 
 UPLOAD_DIR_EDIT = Path('/app/src/static/users')
@@ -46,7 +47,7 @@ async def edit_profile_start(message: Message, state: FSMContext, bot: Bot):
         original_uni=current_profile.uni,
         original_description=current_profile.description,
         original_s3_path=current_profile.s3_path,
-        original_filter_sex=current_profile.sex_filter,
+        original_filter_sex=current_profile.sex_filter.value,
     )
     
     await message.answer(

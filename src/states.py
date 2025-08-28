@@ -8,6 +8,9 @@ class UserRoadmap(StatesGroup):
     main_menu = State()
     llm_chat = State()
 
+class AdminStates(StatesGroup):
+    waiting_broadcast = State()
+
 
 class CreateProfileStates(StatesGroup):
     start = State()

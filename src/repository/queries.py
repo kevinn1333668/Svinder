@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from src.repository.database import engine, Base, session_maker
 from src.repository.models import User, Profile, Like, Complain, Ban, Dislike # noqa: F401
 from src.service.schemas import ProfileCreateInternalSchema
+from src.repository.types import SexFilterState
 
 from datetime import datetime, timedelta
 import random
@@ -94,6 +95,13 @@ class ProfileORM:
             return result.scalar_one_or_none()
         
     @staticmethod
+    async def get_all_tg_ids():
+        async with session_maker() as session:
+            result = await session.execute(select(Profile.tg_id))
+            tg_ids = [row[0] for row in result]
+            return tg_ids
+        
+    @staticmethod
     async def create_profile(profile_data: ProfileCreateInternalSchema):
         async with session_maker() as session:
             
@@ -105,7 +113,7 @@ class ProfileORM:
                 uni=profile_data.uni,
                 description=profile_data.description,
                 s3_path=profile_data.s3_path,
-                sex_filter=True,
+                sex_filter=0,
             )
 
             session.add(new_profile)
@@ -135,7 +143,7 @@ class ProfileORM:
                 return False
     
     @staticmethod
-    async def get_random_profile(curr_user_tgid: int, sex_filter: bool = True) -> Profile | None:
+    async def get_random_profile(curr_user_tgid: int, sex_filter: SexFilterState) -> Profile | None:
         async with session_maker() as session:
 
             user_profile = await ProfileORM.get_profile_by_tgid(curr_user_tgid)
@@ -151,6 +159,8 @@ class ProfileORM:
                     select(Like.liked_tgid).where(Like.liker_tgid == curr_user_tgid),
                     # На кого я пожаловался
                     select(Complain.profile_tg_id).where(Complain.user_tg_id == curr_user_tgid),
+                    #Если на меня пожаловались
+                    select(Complain.user_tg_id).where(Complain.profile_tg_id == curr_user_tgid), 
                     # Кого я дизлайкнул (временно)
                     select(Dislike.profile_id).where(
                         (Dislike.user_id == curr_user_tgid) & (Dislike.until > func.now())
@@ -170,8 +180,10 @@ class ProfileORM:
             ]
 
             # Добавляем фильтр по полу только если sex_filter = True
-            if sex_filter:
-                conditions.append(Profile.sex != user_profile.sex)
+            if sex_filter == SexFilterState.ONLY_GIRLS:
+                conditions.append(Profile.sex == "FEMALE")  # замените на ваше значение для женского пола
+            elif sex_filter == SexFilterState.ONLY_BOYS:
+                conditions.append(Profile.sex == "MALE") 
 
             # Считаем количество подходящих профилей
             count_stmt = select(func.count()).select_from(Profile).where(*conditions)
@@ -268,12 +280,32 @@ class ProfileORM:
                 return False
             
 
-            new_value = not profile.sex_filter
+            
+            current_state = profile.sex_filter
+            if current_state == 0:  # OFF
+                new_value = 1       # ONLY_GIRLS
+            elif current_state == 1: # ONLY_GIRLS
+                new_value = 2       # ONLY_BOYS
+            else:                   # ONLY_BOYS или любое другое значение
+                new_value = 0       # OFF
+
+
             profile.sex_filter = new_value
             await session.commit()
             
-            print(f"Фильтр изменён: {new_value}")
+            print(f"Фильтр изменён: {SexFilterState(new_value)}")
             return (True, new_value)
+        
+    @staticmethod
+    async def get_gender_filter_state(tg_id: int) -> SexFilterState:
+        async with session_maker() as session:
+            profile = await session.execute(select(Profile).where(Profile.tg_id == tg_id))
+            profile = profile.scalar_one_or_none()
+            
+            if profile is None:
+                return SexFilterState.OFF
+            
+            return SexFilterState(profile.sex_filter)
 
 class LikeORM:
     @staticmethod
@@ -518,7 +550,7 @@ class DislikeORM:
 
                 existing = result.scalar_one_or_none()
 
-                new_until = datetime.now() + timedelta(minutes=10)
+                new_until = datetime.now() + timedelta(minutes=20)
 
                 if existing:
                     existing.until = new_until

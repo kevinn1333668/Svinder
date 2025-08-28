@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from src.repository.types import SexEnum
+from src.repository.types import SexEnum, SexFilterState
 
 
 class UserSchema(BaseModel):
@@ -28,7 +28,7 @@ class ProfileSchema(BaseModel):
 
     is_active: Annotated[bool, Field(default=True)]
     s3_path: Annotated[str | None, Field()]
-    sex_filter: Annotated[bool, Field()]
+    sex_filter: Annotated[SexFilterState, Field()]
 
     created_at: Annotated[datetime, Field()]
     modified_at: Annotated[datetime, Field()]
@@ -46,7 +46,7 @@ class ProfileCreateInternalSchema(BaseModel):
     description: Annotated[str, Field(max_length=1024)]
 
     s3_path: Annotated[str | None, Field()]
-    sex_filter: Annotated[bool, Field()]
+    sex_filter: Annotated[int, Field()]
 
 
 class LikeSchema(BaseModel):

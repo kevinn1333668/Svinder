@@ -5,6 +5,7 @@ from src.config import settings
 from src.repository.queries import AsyncORM, UserORM, ProfileORM, LikeORM, ComplaintORM, BanORM, DislikeORM
 from src.service.schemas import UserSchema, ProfileSchema, ProfileCreateInternalSchema, LikeSchema, BanSchema
 from src.repository.models import Profile
+from src.repository.types import SexFilterState
 
 from typing import List, Optional
 
@@ -30,6 +31,7 @@ class ServiceDB:
         if user is None:
             return False
         return True
+    
 
     @staticmethod
     async def get_user_by_tgid(tg_id: int) -> UserSchema | None:
@@ -64,6 +66,10 @@ class ServiceDB:
         return True
     
     @staticmethod
+    async def get_all_users() -> list:
+        return await ProfileORM.get_all_tg_ids() 
+    
+    @staticmethod
     async def add_profile(profile_to_add: ProfileCreateInternalSchema):
         await ProfileORM.create_profile(profile_to_add)
 
@@ -72,7 +78,7 @@ class ServiceDB:
         await ProfileORM.update_profile(profile_to_update)
 
     @staticmethod
-    async def search_profile(curr_user_tgid: int, sex_filter: bool = True) -> ProfileSchema:
+    async def search_profile(curr_user_tgid: int, sex_filter: SexFilterState) -> ProfileSchema:
         profile = await ProfileORM.get_random_profile(curr_user_tgid, sex_filter)
             
         return ProfileSchema.model_validate(profile) if profile else None
@@ -88,8 +94,12 @@ class ServiceDB:
         return ProfileSchema.model_validate(profile) if profile else None
     
     @staticmethod
-    async def change_gender_filter(tg_id: int) -> tuple[bool, bool] | bool:       
+    async def change_gender_filter(tg_id: int) -> tuple[bool, int] | bool:       
         return await ProfileORM.change_gender_filter_by_tg_id(tg_id=tg_id)
+    
+    @staticmethod
+    async def get_gender_filter(tg_id: int) -> SexFilterState:
+        return await ProfileORM.get_gender_filter_state(tg_id=tg_id)
     
     
     @staticmethod

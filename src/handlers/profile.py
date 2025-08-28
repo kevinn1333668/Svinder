@@ -10,6 +10,7 @@ from src.keyboards.reply import sex_selection_horizontal_keyboard, main_menu_key
 from src.service.db_service import ServiceDB
 from src.service.schemas import ProfileCreateInternalSchema
 from src.static.text.texts import text_male, text_female
+from src.repository.types import SexFilterState
 
 
 profile_router = Router()
@@ -107,7 +108,7 @@ async def profile_university(message: Message, state: FSMContext):
 async def profile_description(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
     await message.answer(
-        f"Последний этап! Отправь одно фото себя на СЕРВЕРЕ для своей анкеты.\n Любые другие фото приведут к удалению анкеты и блокировке аккаунта",
+        f"Последний этап! Отправь одно фото себя на СЕРВЕРЕ для своей анкеты.\n Любые другие фото приведут к удалению анкеты и блокировке аккаунта\n Если бот завис после отправки фото - /start",
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.set_state(CreateProfileStates.photo)
@@ -132,7 +133,7 @@ async def profile_photo(message: Message, state: FSMContext, bot: Bot):
             uni=data["uni"],
             description=data["description"],
             s3_path=file_id,
-            sex_filter=True,
+            sex_filter=SexFilterState.OFF.value,
         )
 
         await ServiceDB.add_profile(profile)

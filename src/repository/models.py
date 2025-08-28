@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, UniqueConstraint, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum
+from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum, SexFilterState
 from src.repository.database import Base
 
 
@@ -57,7 +57,11 @@ class Profile(Base):
     )
 
     s3_path: Mapped[Str1024] = mapped_column(nullable=False, unique=True)
-    sex_filter: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    sex_filter: Mapped[SexFilterState] = mapped_column(
+        Integer, 
+        nullable=False, 
+        default=0  # соответствует SexFilterState.OFF
+    )
 
     created_at: Mapped[created_at_type]
     modified_at: Mapped[modified_at_type]

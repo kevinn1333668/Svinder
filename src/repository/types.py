@@ -14,3 +14,8 @@ Str32 = NewType("Str32", str)
 class SexEnum(Enum):
     MALE = "Мальчик"
     FEMALE = "Девочка"
+
+class SexFilterState(Enum):
+    OFF = 0      # 00 в двоичном представлении - нет фильтра
+    ONLY_GIRLS = 1  # 01 - только девушки
+    ONLY_BOYS = 2   # 10 - только парни

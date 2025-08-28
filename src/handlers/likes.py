@@ -176,6 +176,28 @@ async def process_reject_pending_like(callback_query: CallbackQuery, state: FSMC
     await show_next_pending_like_profile(callback_query.message, state, bot)
 
 
+@likes_router.callback_query(ViewLikesStates.viewing_pending_likes, F.data.startswith("Black_list:"))
+async def process_reject_pending_like(callback_query: CallbackQuery, state: FSMContext, bot: Bot):
+    await callback_query.answer("Пользовател добавлен в черный список. 📓")
+    
+    liker_tg_id_str = callback_query.data.split(":")[1]
+    liker_tg_id = int(liker_tg_id_str)
+    current_user_tg_id = callback_query.from_user.id
+
+    await ServiceDB.reject_like(liker_tg_id, current_user_tg_id)
+    await ServiceDB.report_profile(current_user_tg_id, liker_tg_id)
+    
+    try:
+        await callback_query.message.edit_reply_markup(reply_markup=None)
+    except TelegramBadRequest:
+        pass
+
+    data = await state.get_data()
+    current_index = data.get("current_pending_index", 0)
+    await state.update_data(current_pending_index=current_index + 1)
+    await show_next_pending_like_profile(callback_query.message, state, bot)
+
+
 @likes_router.callback_query(ViewLikesStates.viewing_pending_likes, F.data == "next_pending_like")
 async def process_next_pending_like_button(callback_query: CallbackQuery, state: FSMContext, bot: Bot):
     await callback_query.answer()

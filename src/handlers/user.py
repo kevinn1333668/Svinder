@@ -2,7 +2,7 @@ import random
 
 from aiogram import F
 from aiogram import Router
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from src.config import settings
@@ -15,8 +15,9 @@ from src.states import SearchProfileStates, UserRoadmap, CreateProfileStates, Ed
 from src.keyboards.reply import (
     go_to_main_menu, 
     main_menu_keyboard, yes_or_no_keyboard,
-    understand_keyboard, welcome_keyboard
-) 
+    understand_keyboard, welcome_keyboard,
+)
+from src.keyboards.inline import get_confirmation_keyboard 
 
 from src.static.text.texts import (
     text_main_menu, text_main_menu_get_back,
@@ -52,22 +53,46 @@ async def toggle_gender_filter(message: Message):
     result = await ServiceDB.change_gender_filter(message.from_user.id)
 
     if result:
-        await message.answer(f'Фильтрация теперь {'включена ✅' if result[1] else 'выключена ❌'}')
-    else:
-        await message.answer("Произошла ошибка при смене режима фильрации")
+        filter_id = result[1]
+        if filter_id == 0:
+            await message.answer(f'Фильтрация: выключена ❌')
 
-    
+        elif filter_id == 1:
+            await message.answer(f'Фильтрация: Девочки 👧')
+
+        elif filter_id == 2:
+            await message.answer(f'Фильтрация: Мальчики 👦')
+
+    else:
+        await message.answer("Произошла ошибка при смене режима фильтрации")
+
+
 @user_router.message(F.text == text_delete_profile)
 async def delete_my_profile(message: Message):
-    user_tg_id: int = message.from_user.id
+    await message.answer(
+        text="Вы уверены, что хотите удалить свой профиль? Это действие нельзя отменить.",
+        reply_markup=get_confirmation_keyboard()
+    )
+
+
+@user_router.callback_query(F.data == "confirm_delete_profile")
+async def confirm_delete_profile(callback: CallbackQuery):
+    user_tg_id = callback.from_user.id
 
     try:
         await ServiceDB.delete_profile(tg_id=user_tg_id)
-
-        await message.answer(text="Анкета успешно удалена! Нажмите '/start' для перезапуска.")
-
+        await callback.message.edit_text(text="Анкета успешно удалена! Нажмите '/start' для перезапуска.")
     except Exception as e:
-        await message.answer(text="Ошибка при удалении профиля!")
+        await callback.message.edit_text(text="Ошибка при удалении профиля!")
+
+    await callback.answer()  # Убираем "часики" с кнопки
+
+
+@user_router.callback_query(F.data == "cancel_delete_profile")
+async def cancel_delete_profile(callback: CallbackQuery):
+    await callback.message.delete()  # Удаляем сообщение с подтверждением
+    await callback.answer()  # Убираем индикатор загрузки с кнопки
+
 
 @user_router.message(F.text == text_edit_profile)
 async def user_start_edit_profile(message: Message, state: FSMContext):
