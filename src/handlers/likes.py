@@ -13,6 +13,7 @@ from src.states import ViewLikesStates, UserRoadmap
 from src.service.schemas import ProfileSchema, LikeSchema
 
 
+
 async def get_telegram_username_or_name(bot: Bot, user_tg_id: int) -> str:
     try:
         chat = await bot.get_chat(user_tg_id)
@@ -87,7 +88,7 @@ async def show_next_pending_like_profile(target_message: Message, state: FSMCont
                 photo=file_id,
                 caption=(
                     f"Вам симпатизирует: {profile_data.name}, {profile_data.age} лет, {profile_data.uni}\n"
-                    f"{profile_data.description}\n\n"
+                    f"{escape(profile_data.description)}\n\n"
                     f"Telegram: {telegram_user_info}"
                 ),
                 reply_markup=pending_like_action_keyboard(liker_tg_id=liker_tg_id_to_show)

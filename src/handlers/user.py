@@ -75,7 +75,7 @@ async def get_top_likers(message: Message):
     text = "🏆 ТОП-10 по лайкам:\n\n"
     for i, (name, count) in enumerate(top_users, 1):
         if i == 1:
-            text += f"🥇 {name} — {count}  ❤️\n"
+            text += f"🥇 {name} 🥇   {count} 🔥\n\n"
 
         elif i == 2:
             text += f"🥈 {name} — {count}  ❤️\n"
