@@ -1,8 +1,9 @@
-from sqlalchemy import func, text, select, update, union, delete, exists, or_
+from sqlalchemy import func, text, select, update, union, delete, exists, or_, nulls_last
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 
 from src.repository.database import engine, Base, session_maker
-from src.repository.models import User, Profile, Like, Complain, Ban, Dislike # noqa: F401
+from src.repository.models import User, Profile, Like, UserLikesReceived, Complain, Ban, Dislike # noqa: F401
 from src.service.schemas import ProfileCreateInternalSchema
 from src.repository.types import SexFilterState
 
@@ -239,6 +240,10 @@ class ProfileORM:
                     delete(Like).where(Like.liked_tgid == tg_id)
                 )
 
+                await session.execute(
+                    delete(UserLikesReceived).where(UserLikesReceived.tg_id == tg_id)
+                )
+
                 # 3. Жалобы, где пользователь — автор
                 await session.execute(
                     delete(Complain).where(Complain.user_tg_id == tg_id)
@@ -324,9 +329,11 @@ class LikeORM:
             return result.scalar_one_or_none()
 
     @staticmethod
-    async def create_like(liker_tgid, liked_tgid):
+    async def create_like(liker_tgid: int, liked_tgid: int):
         async with session_maker() as session:
             try:
+                print(f"✅ Вызван create_like: {liker_tgid} → {liked_tgid}")
+                # 1. Пытаемся добавить лайк
                 new_like = Like(
                     liker_tgid=liker_tgid,
                     liked_tgid=liked_tgid,
@@ -334,8 +341,32 @@ class LikeORM:
                 )
                 session.add(new_like)
                 await session.commit()
-                return True
+                print("✅ Лайк добавлен в likes")  # Сохраняем в таблицу likes
+
             except IntegrityError:
+                await session.rollback()
+                print("❌ Ошибка IntegrityError при вставке лайка")
+                return False  # дубликат или ошибка ссылок
+
+            try:
+                # 2. Фиксируем факт получения лайка (только один раз)
+                stmt = insert(UserLikesReceived).values(
+                    tg_id=liked_tgid,
+                    liker_tgid=liker_tgid
+                ).on_conflict_do_nothing(
+                    index_elements=['tg_id', 'liker_tgid']
+                )
+                result = await session.execute(stmt)
+                print(f"✅ Вставлено в user_likes_received: {result.rowcount} строк")
+
+                await session.execute(stmt)
+                await session.commit()
+                return True
+            
+            except Exception as e:
+                print(f"❌ Ошибка при вставке в user_likes_received: {type(e).__name__}: {e}") 
+                # Маловероятно, но на всякий случай
+                await session.rollback()
                 return False
             
     @staticmethod
@@ -358,6 +389,8 @@ class LikeORM:
             except Exception:
                 await session.rollback()
                 return False
+            
+
 
     @staticmethod 
     async def get_likes_by_liker_tgid(tg_id: int):
@@ -410,7 +443,54 @@ class LikeORM:
             
             await session.commit()
 
-            return True
+            try:
+                # 2. Фиксируем факт получения лайка (только один раз)
+                stmt = insert(UserLikesReceived).values(
+                    tg_id=liker_tgid,
+                    liker_tgid=liked_tgid
+                ).on_conflict_do_nothing(
+                    index_elements=['tg_id', 'liker_tgid']
+                )
+                result = await session.execute(stmt)
+                print(f"✅ Вставлено в user_likes_received: {result.rowcount} строк")
+
+                await session.execute(stmt)
+                await session.commit()
+                return True
+            
+            except Exception as e:
+                print(f"❌ Ошибка при вставке в user_likes_received: {type(e).__name__}: {e}") 
+                # Маловероятно, но на всякий случай
+                await session.rollback()
+                return False
+            
+    @staticmethod
+    async def get_top_likers(limit: int = 10):
+        async with session_maker() as session:
+            # Подзапрос: количество лайков
+            subq = (
+                select(
+                    UserLikesReceived.tg_id,
+                    func.count().label("like_count")
+                )
+                .group_by(UserLikesReceived.tg_id)
+                .subquery()
+            )
+
+            # Основной запрос: тянем имя из Profile
+            stmt = (
+                select(
+                    Profile.name,
+                    subq.c.like_count
+                )
+                .join(Profile, Profile.tg_id == subq.c.tg_id)
+                .where(Profile.is_active == True)
+                .order_by(nulls_last(subq.c.like_count.desc()))
+                .limit(limit)
+            )
+
+            result = await session.execute(stmt)
+            return result.all()
         
 class ComplaintORM:
 

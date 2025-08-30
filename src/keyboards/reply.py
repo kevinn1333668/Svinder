@@ -4,6 +4,7 @@ from src.static.text.texts import (
     text_search_profiles, text_edit_profile,
     text_my_profile,
     text_yes, text_no, text_male, text_female, text_my_likes, text_delete_profile, text_filter_sex,
+    text_top_likers
 )
 
 
@@ -68,7 +69,7 @@ def main_menu_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text=text_search_profiles), KeyboardButton(text=text_edit_profile)],
             [KeyboardButton(text=text_my_likes), KeyboardButton(text=text_my_profile)],
-            [KeyboardButton(text=text_filter_sex)],
+            [KeyboardButton(text=text_top_likers),KeyboardButton(text=text_filter_sex)],
             [KeyboardButton(text=text_delete_profile)],
         ],
         resize_keyboard=True,

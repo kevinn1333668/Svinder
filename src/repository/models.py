@@ -1,7 +1,7 @@
 from typing import Annotated, List
 from datetime import datetime, timezone
 
-from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, UniqueConstraint, String, func
+from sqlalchemy import text, Boolean, Integer, ForeignKey, DateTime, UniqueConstraint, String, func, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.repository.types import TgID, Str100, Str256, Str1024, SexEnum, SexFilterState
@@ -85,6 +85,19 @@ class Like(Base):
 
     __table_args__ = (
         UniqueConstraint("liker_tgid", "liked_tgid", name="uq_liker_liked"),
+    )
+
+
+class UserLikesReceived(Base):
+    __tablename__ = "user_likes_received"
+
+    tg_id: Mapped[int] = mapped_column(
+        ForeignKey("users.tg_id", ondelete="CASCADE"),  # если удалят получателя — удаляем и его статистику
+        primary_key=True
+    )
+    liker_tgid: Mapped[int] = mapped_column(
+        BigInteger,
+        primary_key=True  # просто BIGINT, без FK
     )
 
 class Complain(Base):

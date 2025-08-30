@@ -137,6 +137,10 @@ class ServiceDB:
         return likes
     
     @staticmethod
+    async def get_top_10():
+        return await LikeORM.get_top_likers()
+    
+    @staticmethod
     async def report_profile(user_id: int, target_id: int):
         await ComplaintORM.add_complaint(user_id=user_id, target_id=target_id)
 

@@ -27,6 +27,7 @@ from src.static.text.texts import (
     text_profile_create_begin,
     text_search_profiles_start,
     text_delete_profile, text_filter_sex,
+    text_top_likers
 )
 
 
@@ -65,6 +66,27 @@ async def toggle_gender_filter(message: Message):
 
     else:
         await message.answer("Произошла ошибка при смене режима фильтрации")
+
+
+@user_router.message(F.text == text_top_likers)
+async def get_top_likers(message: Message):
+    top_users = await ServiceDB.get_top_10()
+
+    text = "🏆 ТОП-10 по лайкам:\n\n"
+    for i, (name, count) in enumerate(top_users, 1):
+        if i == 1:
+            text += f"🥇 {name} — {count}  ❤️\n"
+
+        elif i == 2:
+            text += f"🥈 {name} — {count}  ❤️\n"
+
+        elif i == 3:
+            text += f"🥉 {name} — {count}  ❤️\n"
+
+        else:
+            text += f"{i}. {name} — {count}  ❤️\n"
+
+    await message.answer(text)
 
 
 @user_router.message(F.text == text_delete_profile)
