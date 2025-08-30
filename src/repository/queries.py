@@ -410,7 +410,8 @@ class LikeORM:
             stmt = select(Like).where(
                 Like.liked_tgid == tg_id,
                 Like.is_accepted == False,
-                ~exists().where(Complain.profile_tg_id == Like.liker_tgid)
+                ~exists().where((Complain.user_tg_id == tg_id) &           # Я (получатель) жаловался
+                (Complain.profile_tg_id == Like.liker_tgid)) # на того, кто лайкнул)
             )
             result = await session.execute(stmt)
             return result.scalars().all()
