@@ -6,7 +6,7 @@ from aiogram.exceptions import TelegramBadRequest
 
 from src.service.db_service import ServiceDB
 from src.keyboards.reply import main_menu_keyboard
-from src.keyboards.inline import profile_action_keyboard, confirm_keyboard, moderation_keyboard
+from src.keyboards.inline import profile_action_keyboard, confirm_keyboard, moderation_keyboard, show_profile_keyboard
 from src.states import SearchProfileStates, UserRoadmap
 from src.static.text.texts import text_search_profiles, COMPLAINS
 from src.service.schemas import LikeSchema, ProfileSchema
@@ -42,7 +42,7 @@ async def send_next_profile(
 
         if not profile:
             await target_message.answer(
-                "Других профилей не найдено 😭\nПри дизлайке профиль скрывается на 20 минут",
+                "Других профилей не найдено 😭\nПри дизлайке профиль скрывается на 40 минут",
                 reply_markup=main_menu_keyboard()
             )
             await state.set_state(UserRoadmap.main_menu)
@@ -107,7 +107,7 @@ async def initiate_profile_search_handler(message: Message, state: FSMContext, b
     await send_next_profile(message, message.from_user.id, state, bot, user_profile.sex_filter)
 
 
-@search_router.callback_query(SearchProfileStates.viewing_profile, F.data.in_(["like", "next", "main_menu", "complain"]))
+@search_router.callback_query(SearchProfileStates.viewing_profile, F.data.in_(["like", "next", "main_menu", "complain", "blacklist"]))
 async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext, bot: Bot):
     await callback_query.answer()
 
@@ -182,7 +182,8 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
         else:
             await bot.send_message(
                 chat_id=viewed_tg_id,
-                text='Вас лайкнули! ❤️\nПосмотрите, кто это был 👀'
+                text='Вас лайкнули! ❤️\nПосмотрите, кто это был 👀',
+                reply_markup=show_profile_keyboard(user_tg_id)
             )        
 
         await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter=sex_filter)
@@ -193,6 +194,13 @@ async def handle_profile_action(callback_query: CallbackQuery, state: FSMContext
         await ServiceDB.create_dislike(user_id=user_tg_id, target_id=viewed_tg_id)
 
         await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter)
+
+    elif action == "blacklist":
+        print(f"Добавляем в черный список: {user_tg_id} -> {viewed_tg_id}")
+        await ServiceDB.report_profile(user_id=user_tg_id, target_id=viewed_tg_id)        
+
+        await send_next_profile(callback_query.message, user_tg_id, state, bot, sex_filter)
+
 
     elif action == 'complain':
         await state.update_data(

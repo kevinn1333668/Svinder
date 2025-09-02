@@ -10,6 +10,7 @@ class UserRoadmap(StatesGroup):
 
 class AdminStates(StatesGroup):
     waiting_broadcast = State()
+    waitng_advertisment = State()
 
 
 class CreateProfileStates(StatesGroup):

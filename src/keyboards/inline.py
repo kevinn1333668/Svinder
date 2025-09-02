@@ -6,9 +6,10 @@ def profile_action_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[[
                 InlineKeyboardButton(text="♥️", callback_data="like"),
                 InlineKeyboardButton(text="👎", callback_data="next"),
-                InlineKeyboardButton(text="🚪", callback_data="main_menu")
+                InlineKeyboardButton(text="🚪", callback_data="main_menu"),
         ],
-        [InlineKeyboardButton(text="Пожаловаться", callback_data="complain")]]
+        [InlineKeyboardButton(text="Пожаловаться", callback_data="complain")],
+        [InlineKeyboardButton(text="В черный список 🏴", callback_data=f"blacklist")]]
     )
 
 
@@ -32,7 +33,7 @@ def pending_like_action_keyboard(liker_tg_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="Лайкнуть в ответ ❤️", callback_data=f"accept_pending_like:{liker_tg_id}"),
+                InlineKeyboardButton(text="Лайкнуть ❤️", callback_data=f"accept_pending_like:{liker_tg_id}"),
                 InlineKeyboardButton(text="Отклонить 👎", callback_data=f"reject_pending_like:{liker_tg_id}"),
             ],
             [
@@ -41,6 +42,22 @@ def pending_like_action_keyboard(liker_tg_id: int) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="Меню лайков ☰", callback_data="back_to_view_likes_menu"),
+            ]
+        ]
+    )
+
+def short_pending_like_action_keyboard(liker_tg_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Лайкнуть ❤️", callback_data=f"accept_pending_like:{liker_tg_id}"),
+                InlineKeyboardButton(text="Отклонить 👎", callback_data=f"reject_pending_like:{liker_tg_id}"),
+            ],
+            [
+                InlineKeyboardButton(text="В черный список 🏴", callback_data=f"Black_list:{liker_tg_id}"),
+            ],
+            [
+                InlineKeyboardButton(text="Отложить", callback_data="hide_profile"),
             ]
         ]
     )
@@ -70,5 +87,12 @@ def moderation_keyboard(reported_tg_id: int):
         inline_keyboard=[
             [InlineKeyboardButton(text="✅ Одобрить", callback_data=f"approve_{reported_tg_id}"),
             InlineKeyboardButton(text="❌ Забанить", callback_data=f"ban_{reported_tg_id}")]
+        ]
+    )
+
+def show_profile_keyboard(liker_tg_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='Посмотреть профиль ❤️', callback_data=f'show_profile:{liker_tg_id}')]    
         ]
     )

@@ -1,7 +1,7 @@
 import random
 
 from aiogram import F
-from aiogram import Router
+from aiogram import Router, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
@@ -17,7 +17,7 @@ from src.keyboards.reply import (
     main_menu_keyboard, yes_or_no_keyboard,
     understand_keyboard, welcome_keyboard,
 )
-from src.keyboards.inline import get_confirmation_keyboard 
+from src.keyboards.inline import get_confirmation_keyboard, short_pending_like_action_keyboard 
 
 from src.static.text.texts import (
     text_main_menu, text_main_menu_get_back,
@@ -137,29 +137,43 @@ async def user_create_profile(message: Message, state: FSMContext):
 
 @user_router.message(UserRoadmap.main_menu)
 async def user_search_profiles(message: Message, state: FSMContext):
-    if await ServiceDB.is_profile_exist_by_tgid(message.from_user.id):
-        await message.answer(
-            text_main_menu,
-            reply_markup=main_menu_keyboard(),
-        )
-        await state.set_state(SearchProfileStates.start)
-    else:
-        await message.answer(
-            "Нужно создать анкету",
-            reply_markup=yes_or_no_keyboard()
-        )
-
-
-
-
-
-
-
-
-@user_router.message(UserRoadmap.main_menu)
-async def user_main_menu(message: Message, state: FSMContext):
     await message.answer(
-        text_main_menu,
-        reply_markup=main_menu_keyboard(),
-        parse_mode="Markdown",
+        "Нужно создать анкету",
+        reply_markup=yes_or_no_keyboard()
     )
+
+@user_router.callback_query(F.data.startswith("show_profile"))
+async def show_liker_profile(callback_query: CallbackQuery, bot: Bot):
+
+    await callback_query.message.delete()
+    
+    action = callback_query.data
+    liker_tg_id_to_show = int(action.split(':')[1])
+
+    profile_data = await ServiceDB.get_profile_by_tgid(liker_tg_id_to_show)
+
+    if profile_data:
+        try:
+            file_id = profile_data.s3_path
+            
+            await bot.send_photo(
+                chat_id=callback_query.from_user.id,
+                photo=file_id,
+                caption=(
+                    f"Вам симпатизирует: {profile_data.name}, {profile_data.age} лет, {profile_data.uni}\n"
+                    f"{(profile_data.description)}\n\n"
+                ),
+                reply_markup=short_pending_like_action_keyboard(liker_tg_id=liker_tg_id_to_show)
+            )
+
+        except FileNotFoundError:
+            await bot.send_message(chat_id=callback_query.from_user.id ,text=f"Не удалось загрузить фото для профиля {profile_data.name}. Пропускаем...")
+        except Exception as e:
+            await bot.send_message(chat_id=callback_query.from_user.id ,text=f"Произошла ошибка при показе профиля: {e}. Пропускаем...")
+            print(f"Error sending pending like profile: {e}")
+
+
+
+
+
+

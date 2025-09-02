@@ -82,14 +82,12 @@ async def show_next_pending_like_profile(target_message: Message, state: FSMCont
     if profile_data:
         try:
             file_id = profile_data.s3_path
-            telegram_user_info = await get_telegram_username_or_name(bot, liker_tg_id_to_show)
             
             await target_message.answer_photo(
                 photo=file_id,
                 caption=(
                     f"Вам симпатизирует: {profile_data.name}, {profile_data.age} лет, {profile_data.uni}\n"
                     f"{(profile_data.description)}\n\n"
-                    f"Telegram: {telegram_user_info}"
                 ),
                 reply_markup=pending_like_action_keyboard(liker_tg_id=liker_tg_id_to_show)
             )
@@ -212,6 +210,21 @@ async def process_next_pending_like_button(callback_query: CallbackQuery, state:
     await state.update_data(current_pending_index=current_index + 1)
     await show_next_pending_like_profile(callback_query.message, state, bot)
 
+@likes_router.callback_query(ViewLikesStates.viewing_pending_likes, F.data == "next_pending_like")
+async def process_complain_pending_like_button(callback_query: CallbackQuery, state: FSMContext, bot: Bot):
+    await callback_query.answer()
+    try:
+        await callback_query.message.delete() 
+    except TelegramBadRequest:
+        pass
+        
+
+
+    data = await state.get_data()
+    current_index = data.get("current_pending_index", 0)
+    await state.update_data(current_pending_index=current_index + 1)
+    await show_next_pending_like_profile(callback_query.message, state, bot)
+
 
 @likes_router.callback_query(ViewLikesStates.choose_view_type, F.data == "view_my_mutual_likes")
 async def process_view_my_mutual_likes(callback_query: CallbackQuery, state: FSMContext, bot: Bot):
@@ -278,3 +291,101 @@ async def process_back_buttons_likes(callback_query: CallbackQuery, state: FSMCo
         await state.set_state(ViewLikesStates.choose_view_type)
         await callback_query.message.delete()
         await callback_query.message.answer("Меню лайков:", reply_markup=view_likes_menu_keyboard())
+
+
+
+
+
+@likes_router.callback_query(F.data.startswith("accept_pending_like:"))
+async def process_accept_pending_like(callback_query: CallbackQuery, bot: Bot):
+    await callback_query.answer("Лайк принят! ❤️")
+    await callback_query.message.delete()
+    
+    liker_tg_id_str = callback_query.data.split(":")[1]
+    liker_tg_id = int(liker_tg_id_str)
+    current_user_tg_id = callback_query.from_user.id
+
+    profile_data_curr_user: Optional[ProfileSchema] = await ServiceDB.get_profile_by_tgid(current_user_tg_id)
+    profile_data_liker: Optional[ProfileSchema] = await ServiceDB.get_profile_by_tgid(liker_tg_id)
+
+
+    await ServiceDB.accept_like(liker_tg_id, current_user_tg_id)
+
+    try:
+        await callback_query.message.edit_reply_markup(reply_markup=None)
+    except TelegramBadRequest:
+        pass
+
+    if profile_data_curr_user:
+            try:
+                file_id_curr_user = profile_data_curr_user.s3_path
+                file_id_liker = profile_data_liker.s3_path
+
+                curr_user_tg_info = await get_telegram_username_or_name(bot, current_user_tg_id)
+                liker_tg_info = await get_telegram_username_or_name(bot, liker_tg_id)
+                
+                await bot.send_photo(
+                    chat_id=liker_tg_id,
+                    photo=file_id_curr_user,
+                    caption=(
+                        f"Взаимная симпатия с: {profile_data_curr_user.name}, {profile_data_curr_user.age}\n"
+                        f"Город: {profile_data_curr_user.uni}\n"
+                        f"О себе: {profile_data_curr_user.description}\n\n"
+                        f"Связь: {curr_user_tg_info}"
+                    )
+                )
+
+                await bot.send_photo(
+                    chat_id=current_user_tg_id,
+                    photo=file_id_liker,
+                    caption=(
+                        f"Взаимная симпатия с: {profile_data_liker.name}, {profile_data_liker.age}\n"
+                        f"Город: {profile_data_liker.uni}\n"
+                        f"О себе: {profile_data_liker.description}\n\n"
+                        f"Связь: {liker_tg_info}"
+                    )
+                )
+                
+            except FileNotFoundError:
+                await callback_query.message.answer(f"Не удалось загрузить фото для профиля {profile_data_curr_user.name} (ID: {current_user_tg_id}). Telegram: {await get_telegram_username_or_name(bot, current_user_tg_id)}")
+            except Exception as e:
+                await callback_query.message.answer(f"Произошла ошибка при показе профиля {profile_data_curr_user.name} (ID: {current_user_tg_id}). Telegram: {await get_telegram_username_or_name(bot, current_user_tg_id)}. Ошибка: {e}")
+                print(f"Error sending mutual like profile: {e}")
+    else:
+            await callback_query.message.answer(f"Не удалось найти профиль для пользователя с ID {current_user_tg_id}. Telegram: {await get_telegram_username_or_name(bot, current_user_tg_id)}")
+
+
+@likes_router.callback_query(F.data.startswith("reject_pending_like:"))
+async def process_reject_pending_like(callback_query: CallbackQuery, bot: Bot):
+    await callback_query.answer("Лайк отклонен. 👎")
+    
+    liker_tg_id_str = callback_query.data.split(":")[1]
+    liker_tg_id = int(liker_tg_id_str)
+    current_user_tg_id = callback_query.from_user.id
+
+    await ServiceDB.reject_like(liker_tg_id, current_user_tg_id)
+    
+    try:
+        await callback_query.message.delete()
+    except TelegramBadRequest:
+        pass
+
+@likes_router.callback_query(F.data.startswith("Black_list:"))
+async def process_reject_pending_like(callback_query: CallbackQuery, bot: Bot):
+    await callback_query.answer("Пользовател добавлен в черный список. 📓")
+    
+    liker_tg_id_str = callback_query.data.split(":")[1]
+    liker_tg_id = int(liker_tg_id_str)
+    current_user_tg_id = callback_query.from_user.id
+
+    await ServiceDB.reject_like(liker_tg_id, current_user_tg_id)
+    await ServiceDB.report_profile(current_user_tg_id, liker_tg_id)
+    
+    try:
+        await callback_query.message.delete()
+    except TelegramBadRequest:
+        pass
+
+@likes_router.callback_query(F.data.startswith("hide_profile"))
+async def process_hide_profile(callback_query: CallbackQuery):
+    await callback_query.message.delete()

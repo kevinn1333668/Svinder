@@ -182,6 +182,16 @@ async def start_broadcast(message: Message, state: FSMContext):
     await state.set_state(AdminStates.waiting_broadcast)
     await message.answer("📢 Отправь мне сообщение, которое нужно разослать всем пользователям.")
 
+@admin_router.message(Command('adv'))
+async def start_broadcast(message: Message, state: FSMContext):
+    # Проверка: только админы
+    if message.from_user.id not in settings.ADMINS_IDS:
+        return  # Или можно отправить "нет прав", если нужно
+
+    # Устанавливаем состояние
+    await state.set_state(AdminStates.waitng_advertisment)
+    await message.answer("📢 Отправь мне сообщение, которое нужно разослать всем пользователям.")
+
 @admin_router.message(AdminStates.waiting_broadcast, F.from_user.id.in_(settings.ADMINS_IDS))
 async def handle_broadcast(message: Message, bot: Bot, state: FSMContext):
     
@@ -207,6 +217,39 @@ async def handle_broadcast(message: Message, bot: Bot, state: FSMContext):
                     message_id=message.message_id,
                     caption=message.caption or ''
                 )
+            await asyncio.sleep(0.05) 
+
+        except Exception as e:
+            print(f'Ошибка {tg_id}: {e}')
+
+    await message.answer('✅ Рассылка завершена!')
+
+
+@admin_router.message(AdminStates.waitng_advertisment, F.from_user.id.in_(settings.ADMINS_IDS))
+async def handle_broadcast(message: Message, bot: Bot, state: FSMContext):
+    
+    
+    await state.clear()
+    
+    tg_ids = await ServiceDB.get_all_users()
+
+    await message.answer(f"Начинаю рассылку ({len(tg_ids)} пользователям)")
+
+    for tg_id in tg_ids:
+        try:
+            if message.text:
+                await bot.send_message(
+                    chat_id=tg_id,
+                    text=message.text + '\n\n#реклама'
+                )
+
+            else:
+                await bot.copy_message(
+                    chat_id=tg_id,
+                    from_chat_id=message.chat.id,
+                    message_id=message.message_id,
+                    caption=(message.caption or '') + '\n\n#реклама'
+                 )
             await asyncio.sleep(0.05) 
 
         except Exception as e:

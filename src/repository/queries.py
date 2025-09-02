@@ -1,3 +1,4 @@
+from operator import sub
 from sqlalchemy import func, text, select, update, union, delete, exists, or_, nulls_last
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
@@ -443,27 +444,6 @@ class LikeORM:
             like.is_accepted = True
             
             await session.commit()
-
-            try:
-                # 2. Фиксируем факт получения лайка (только один раз)
-                stmt = insert(UserLikesReceived).values(
-                    tg_id=liker_tgid,
-                    liker_tgid=liked_tgid
-                ).on_conflict_do_nothing(
-                    index_elements=['tg_id', 'liker_tgid']
-                )
-                result = await session.execute(stmt)
-                print(f"✅ Вставлено в user_likes_received: {result.rowcount} строк")
-
-                await session.execute(stmt)
-                await session.commit()
-                return True
-            
-            except Exception as e:
-                print(f"❌ Ошибка при вставке в user_likes_received: {type(e).__name__}: {e}") 
-                # Маловероятно, но на всякий случай
-                await session.rollback()
-                return False
             
     @staticmethod
     async def get_top_likers(limit: int = 10):
@@ -492,6 +472,10 @@ class LikeORM:
 
             result = await session.execute(stmt)
             return result.all()
+        
+
+    
+
         
 class ComplaintORM:
 
@@ -631,7 +615,7 @@ class DislikeORM:
 
                 existing = result.scalar_one_or_none()
 
-                new_until = datetime.now() + timedelta(minutes=20)
+                new_until = datetime.now() + timedelta(minutes=40)
 
                 if existing:
                     existing.until = new_until
