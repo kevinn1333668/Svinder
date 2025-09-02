@@ -473,6 +473,24 @@ class LikeORM:
             result = await session.execute(stmt)
             return result.all()
         
+    @staticmethod
+    async def get_my_likes(tg_id: int):
+        async with session_maker() as session:
+            # Подзапрос: количество лайков
+            stmt = (
+                select(
+                    func.count().label("like_count")
+                )
+                .where(
+                    UserLikesReceived.tg_id == tg_id
+                )
+            )
+
+
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+
+        
 
     
 

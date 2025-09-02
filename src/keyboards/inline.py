@@ -23,6 +23,9 @@ def view_likes_menu_keyboard() -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="Мои взаимные лайки ❤️", callback_data="view_my_mutual_likes"),
             ],
             [
+                InlineKeyboardButton(text="Сколько у меня лайков 📊", callback_data="view_my_likes_count")
+            ],
+            [
                 InlineKeyboardButton(text="⬅️ Назад в главное меню", callback_data="likes_to_main_menu"),
             ]
         ]

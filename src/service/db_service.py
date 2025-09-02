@@ -97,6 +97,8 @@ class ServiceDB:
     async def change_gender_filter(tg_id: int) -> tuple[bool, int] | bool:       
         return await ProfileORM.change_gender_filter_by_tg_id(tg_id=tg_id)
     
+
+    
     @staticmethod
     async def get_gender_filter(tg_id: int) -> SexFilterState:
         return await ProfileORM.get_gender_filter_state(tg_id=tg_id)
@@ -141,6 +143,11 @@ class ServiceDB:
         return await LikeORM.get_top_likers()
     
     @staticmethod
+    async def get_my_likes_count(tg_id: int):
+        return await LikeORM.get_my_likes(tg_id=tg_id)
+
+    
+    @staticmethod
     async def report_profile(user_id: int, target_id: int):
         await ComplaintORM.add_complaint(user_id=user_id, target_id=target_id)
 
@@ -170,6 +177,9 @@ class ServiceDB:
     @staticmethod
     async def create_dislike(user_id: int, target_id: int) -> bool:
         return await DislikeORM.add_dislike(user_id=user_id, target_id=target_id)
+    
+
+
 
     
     

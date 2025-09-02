@@ -63,6 +63,17 @@ async def process_view_who_liked_me(callback_query: CallbackQuery, state: FSMCon
     await callback_query.message.edit_text("Загружаю анкеты тех, кто вас лайкнул...")
     await show_next_pending_like_profile(callback_query.message, state, bot)
 
+@likes_router.callback_query(F.data == "view_my_likes_count")
+async def process_view_who_liked_me(callback_query: CallbackQuery, bot: Bot):
+    await callback_query.answer()
+
+    count_likes = await ServiceDB.get_my_likes_count(callback_query.from_user.id)
+
+    await bot.send_message(
+        chat_id=callback_query.from_user.id,
+        text=f'У тебя {count_likes} ❤️'
+    )
+
 
 async def show_next_pending_like_profile(target_message: Message, state: FSMContext, bot: Bot):
     user_tg_id = target_message.chat.id
