@@ -20,6 +20,9 @@ commands_router = Router()
 
 @commands_router.message(CommandStart())
 async def command_start(message: Message, state: FSMContext):
+
+    await state.clear()
+
     if not await ServiceDB.is_user_exist_by_tgid(message.from_user.id):
         await ServiceDB.add_user(message.from_user.id, message.from_user.username)
         await message.answer_photo(
